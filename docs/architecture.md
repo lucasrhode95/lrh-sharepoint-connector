@@ -53,5 +53,7 @@ read-only operation and is safe to retry. No Graph write adapter exists.
 
 The CLI exposes auth, status and mcp commands. Authentication is explicit; starting the MCP process
 does not launch a login flow. MCP tools call the same Files service methods as each other, keeping
-input bounds and file behavior consistent. Local downloads are the only product data retained by
+input bounds and file behavior consistent. Offline status distinguishes a cached OAuth client
+credential from a resource-specific Graph access-token expiry; `status --check` tests token
+acquisition, not file-operation permission. Local downloads are the only product data retained by
 this connector.

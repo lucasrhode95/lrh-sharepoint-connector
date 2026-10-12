@@ -56,6 +56,10 @@ shared auth package's single-account binding and isolates local download directo
 fingerprint. The MCP surface delegates to the shared service; the service depends on a remote port,
 not concrete Graph wire details.
 
+Offline status reports cached OAuth client credentials separately from a cached Graph access-token
+expiry. `status --check` attempts token acquisition but does not prove Search, metadata or download
+authorization.
+
 ## Acceptance evidence
 
 Deterministic tests use synthetic Graph responses. Live verification is deployment-specific and

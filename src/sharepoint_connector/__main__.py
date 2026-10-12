@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from m365_auth import AuthenticationRequired, TokenProvider
 
@@ -61,8 +62,13 @@ def _status(check: bool) -> int:
     status = provider.status()
     print(f"Shared auth cache: {'present' if status.exists else 'not present'}")
     for profile in status.profiles:
-        state = "signed in" if profile.signed_in else "needs sign-in"
-        print(f"[{profile.profile}] {state}")
+        state = "cached" if profile.client_credential_cached else "not cached"
+        expires = (
+            datetime.fromtimestamp(profile.access_token_expires_on, UTC).isoformat(timespec="seconds")
+            if profile.access_token_expires_on
+            else "not cached"
+        )
+        print(f"[{profile.profile}] client credential {state}; access token expires {expires}")
     if check:
         try:
             provider.get_token(config.GRAPH_PROFILE)
@@ -82,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     auth.add_argument(
         "--sign-out", action="store_true", help="Clear authentication for all three connectors."
     )
-    status = commands.add_parser("status", help="Show cached shared sign-in state.")
+    status = commands.add_parser("status", help="Show cached client credentials and Graph token state.")
     status.add_argument("--check", action="store_true", help="Also acquire the Graph token silently.")
     commands.add_parser("mcp", help="Run the stdio MCP server.")
     return parser

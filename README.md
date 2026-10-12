@@ -62,9 +62,10 @@ uv run sharepoint-connector auth --sign-out
 uv run sharepoint-connector auth
 ~~~
 
-The status command reads local profile state. status --check also attempts silent Graph token
-acquisition; it does not prove Search, metadata or download permission. Operation-specific Graph
-permission errors are reported separately from missing sign-in.
+The status command reads local profile state: whether the OAuth client credential is cached and
+when a matching Graph access token expires, if present. status --check also attempts silent Graph
+token acquisition; it does not prove Search, metadata or download permission. Operation-specific
+Graph permission errors are reported separately from token acquisition.
 
 ## Configure a local MCP client
 

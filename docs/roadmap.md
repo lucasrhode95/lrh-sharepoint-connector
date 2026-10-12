@@ -5,6 +5,8 @@ Updated: 2026-10-11.
 ## Implemented in initial read-only connector
 
 - Shared authentication through the outlook.graph profile.
+- Offline status distinguishes cached client credentials from resource-token expiry; token
+  acquisition does not prove Graph file access.
 - Microsoft Graph Search for driveItem with explicit offset paging and a conservative page cap.
 - Resource-level drive/item reference mapping; no hitId-to-itemId assumption.
 - Selected metadata hydration and bounded selected-file download.
