@@ -47,11 +47,15 @@ uv run sharepoint-connector status
 ~~~
 
 Any one of the three connectors can start the shared Microsoft 365 sign-in bootstrap. It checks all
-five shared profiles, silently reuses accepted profiles and asks Microsoft for profiles that are
+six shared profiles, silently reuses accepted profiles and asks Microsoft for profiles that are
 still missing. Different Microsoft clients or resource audiences can require separate device codes
-and MFA approvals. The auth command exits successfully only when all five profiles are ready, so it
+and MFA approvals. The auth command exits successfully only when all six profiles are ready, so it
 can report an incomplete setup even when the Graph profile this connector uses is ready. Ordinary
 search and file operations do not open a login flow.
+
+The `m365.search` profile is also bootstrapped here because the profile catalog is shared; Outlook
+uses it for calendar search and Teams uses it for online message discovery. It does not authorize
+SharePoint or OneDrive file operations.
 
 The encrypted cache is shared at %USERPROFILE%\.lrh-m365-auth by default. Set M365_AUTH_HOME to
 change the location for all connectors. It is bound to one active Microsoft account. Switching

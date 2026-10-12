@@ -30,6 +30,10 @@ tenant/object identity, and rebuilds the account-bound service set after an acco
 requests acquire the current profile token. Download directories are account-fingerprinted. The
 shared auth cache is encrypted by the library and used by Outlook, Teams and SharePoint.
 
+The shared auth bootstrap includes six resource profiles. SharePoint consumes `outlook.graph` for
+its configured Graph operations. `m365.search` is bootstrapped for Outlook calendar and Teams
+message discovery; this connector does not use it, and it grants no SharePoint file permission.
+
 A cached credential indicates only that OAuth state exists. Graph can still deny Search, metadata or
 one selected file. Search and file permission errors remain separate from sign-in readiness.
 
