@@ -53,7 +53,7 @@ and MFA approvals. The auth command exits successfully only when all five profil
 can report an incomplete setup even when the Graph profile this connector uses is ready. Ordinary
 search and file operations do not open a login flow.
 
-The encrypted cache is shared at %USERPROFILE%\\.lrh-m365-auth by default. Set M365_AUTH_HOME to
+The encrypted cache is shared at %USERPROFILE%\.lrh-m365-auth by default. Set M365_AUTH_HOME to
 change the location for all connectors. It is bound to one active Microsoft account. Switching
 accounts clears authentication for Outlook, Teams and SharePoint:
 
@@ -68,19 +68,19 @@ permission errors are reported separately from missing sign-in.
 
 ## Configure a local MCP client
 
-The server uses stdio. Replace C:\\Users\\you\\dev\\lrh-sharepoint-connector with the absolute path to
+The server uses stdio. Replace C:\Users\you\dev\lrh-sharepoint-connector with the absolute path to
 your clone.
 
 Codex CLI:
 
 ~~~powershell
-codex mcp add lrh-sharepoint-connector -- uv run --directory C:\\Users\\you\\dev\\lrh-sharepoint-connector sharepoint-connector mcp
+codex mcp add lrh-sharepoint-connector -- uv run --directory C:\Users\you\dev\lrh-sharepoint-connector sharepoint-connector mcp
 ~~~
 
 Claude Code:
 
 ~~~powershell
-claude mcp add --transport stdio lrh-sharepoint-connector -- uv run --directory C:\\Users\\you\\dev\\lrh-sharepoint-connector sharepoint-connector mcp
+claude mcp add --transport stdio lrh-sharepoint-connector -- uv run --directory C:\Users\you\dev\lrh-sharepoint-connector sharepoint-connector mcp
 ~~~
 
 VS Code local MCP support, in .vscode/mcp.json:
@@ -94,7 +94,7 @@ VS Code local MCP support, in .vscode/mcp.json:
       "args": [
         "run",
         "--directory",
-        "C:\\\\Users\\\\you\\\\dev\\\\lrh-sharepoint-connector",
+        "C:\\Users\\you\\dev\\lrh-sharepoint-connector",
         "sharepoint-connector",
         "mcp"
       ]
@@ -103,7 +103,7 @@ VS Code local MCP support, in .vscode/mcp.json:
 }
 ~~~
 
-Replace the example path. JSON and TOML strings on Windows require doubled backslashes. These
+Replace the example path. PowerShell uses single backslashes; JSON and TOML strings double them. These
 commands need a local client that can start an MCP process. The connector does not provide a browser
 UI or a remote MCP endpoint.
 
@@ -168,7 +168,7 @@ the partial file. Existing files are not overwritten; a numeric suffix is added 
 Default Windows output:
 
 ~~~text
-%LOCALAPPDATA%\\lrh-sharepoint-connector\\downloads\\<account-fingerprint>\\
+%LOCALAPPDATA%\lrh-sharepoint-connector\downloads\<account-fingerprint>\
 ~~~
 
 Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads remain on disk for the user to
