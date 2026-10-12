@@ -1,6 +1,6 @@
 # SharePoint connector requirements
 
-Date: 2026-10-11.
+Date: 2026-10-12.
 
 ## Product boundary
 
@@ -39,10 +39,12 @@ access claim.
 
 ## Access and persistence
 
-The first implementation uses the shared outlook.graph profile through lrh-m365-auth. Token-cache
-presence does not prove a Graph operation or file is authorized. Microsoft delegated permissions,
-tenant consent, account grants and each item's access are distinct. No connector-specific plaintext
-token cache is created.
+The connector uses the shared `outlook.graph` profile through lrh-m365-auth. The shared auth
+catalog bootstraps six profiles, including `m365.search` for Outlook calendar and Teams message
+discovery; this connector does not use that profile, and it does not authorize file operations.
+Token-cache presence does not prove a Graph operation or file is authorized. Microsoft delegated
+permissions, tenant consent, account grants and each item's access are distinct. No
+connector-specific plaintext token cache is created.
 
 The connector stores no durable search index or file metadata cache. A selected download is streamed
 with a default 50 MiB limit and a hard 100 MiB cap, to an exclusive account-fingerprinted output

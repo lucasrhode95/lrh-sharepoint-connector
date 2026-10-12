@@ -56,6 +56,11 @@ account's grant set as the minimum required permission or generalize its consent
 tenants. A new sign-in may not add a missing scope unless the client/resource request and tenant
 consent allow it.
 
+**Shared-auth catalog note (2026-10-12):** the auth package now bootstraps six resource profiles,
+including `m365.search` for Outlook calendar and Teams message discovery. SharePoint continues to
+request `outlook.graph`; `m365.search` is not used by this connector and is not evidence of file
+access. This is an implementation/catalog update, not new live permission evidence.
+
 ## Download boundary
 
 Selected content is retrieved only after explicit download_file invocation. Downloads have a 50 MiB
