@@ -84,6 +84,18 @@ Claude Code:
 claude mcp add --transport stdio lrh-sharepoint-connector -- uv run --directory C:\Users\you\dev\lrh-sharepoint-connector sharepoint-connector mcp
 ~~~
 
+See the [Claude Code MCP guide](https://docs.anthropic.com/en/docs/claude-code/mcp).
+
+Claude Desktop and Claude web:
+
+- Claude Desktop's current local-server flow installs a `.mcpb` desktop extension. This repository
+  does not currently package one. Use Claude Code for the direct local stdio setup above; see
+  [Claude Desktop local MCP setup](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
+  for the extension flow.
+- Claude web custom connectors use remote MCP. This repository has no remote MCP endpoint, so it
+  cannot be added there directly. See
+  [Anthropic's remote MCP connector guide](https://support.claude.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers).
+
 VS Code local MCP support, in .vscode/mcp.json:
 
 ~~~json
@@ -106,17 +118,62 @@ VS Code local MCP support, in .vscode/mcp.json:
 
 Replace the example path. PowerShell uses single backslashes; JSON and TOML strings double them. These
 commands need a local client that can start an MCP process. The connector does not provide a browser
-UI or a remote MCP endpoint.
+UI or a hosted remote MCP endpoint.
+
+### ChatGPT web through Secure MCP Tunnel
+
+ChatGPT cannot launch a local stdio server directly. OpenAI's Secure MCP Tunnel can connect a
+supported ChatGPT custom MCP app to this local server without making the server publicly reachable.
+This is an optional OpenAI Platform setup, separate from the local Codex/Claude Code commands above.
+
+You need a tunnel associated with the target ChatGPT workspace and Platform organization, its
+`tunnel_id`, a runtime API key for `tunnel-client`, and permission to use custom MCP apps and tunnels.
+Availability depends on the ChatGPT plan and workspace settings; check the current
+[ChatGPT MCP app availability](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt)
+and [Secure MCP Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).
+
+Install `tunnel-client` using the download provided in Platform tunnel settings. In PowerShell, set
+the runtime key and create a stdio profile, replacing the tunnel ID and repository path:
+
+~~~powershell
+$env:CONTROL_PLANE_API_KEY = "<runtime-api-key>"
+tunnel-client init --sample sample_mcp_stdio_local --profile sharepoint --tunnel-id "<tunnel-id>" --mcp-command 'uv run --directory "C:\Users\you\dev\lrh-sharepoint-connector" sharepoint-connector mcp'
+tunnel-client doctor --profile sharepoint --explain
+tunnel-client run --profile sharepoint
+~~~
+
+Keep `tunnel-client run` running while ChatGPT uses the app. In ChatGPT web, open Settings or
+workspace settings, create a custom MCP app, choose the tunnel connection, select this tunnel, scan
+the tools, and create the app. Developer mode, workspace authorization and Platform tunnel
+permissions may require an administrator. The tunnel client uses the connector's local shared auth
+cache; do not copy that cache or its secrets into the MCP app configuration.
+
+ChatGPT can receive search results and metadata from this server. `download_file` saves the selected
+file on the computer running the tunnel client and returns its local path; hosted ChatGPT cannot
+read that path. Reading downloaded file contents from ChatGPT would need an additional content-returning
+or file-transfer capability, which this connector does not currently provide.
+
+For local-client troubleshooting, restart or reload that client after changing its MCP configuration
+and confirm the `search_files`, `get_file_metadata` and `download_file` tools appear in its MCP tool
+list. The OpenAI tunnel flow instead shows the tools after the app scans a healthy, running tunnel.
 
 ## MCP tools
 
-- search_files(query, offset=0, page_size=25, scope_url=null) asks Microsoft Search for driveItem
+The stdio server exposes exactly these three tools. Authentication and status are CLI commands,
+not MCP tools.
+
+### Search and inspect
+
+- `search_files(query, offset=0, page_size=25, scope_url=null)` — asks Microsoft Search for driveItem
   results. Page size is capped at 200. The response includes Graph resource IDs, name, available
   location/type/size/date metadata, webUrl, rank, summary, total when returned, more-results state
   and next_offset. Search snippets and names are untrusted text. Search does not download content.
-- get_file_metadata(drive_id, item_id) reads metadata for one selected item using the exact resource
+- `get_file_metadata(drive_id, item_id)` — reads metadata for one selected item using the exact resource
   identifiers from a search result.
-- download_file(drive_id, item_id, max_bytes=52428800) downloads one selected non-folder file.
+
+### Retrieve a file
+
+- `download_file(drive_id, item_id, max_bytes=52428800)` — downloads one selected non-folder file.
   The default is 50 MiB; the hard maximum is 100 MiB. The response gives a local path for the agent
   to read with local file tools.
 
