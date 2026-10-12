@@ -1,0 +1,92 @@
+"""CLI for shared authentication, status and the stdio MCP server."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from collections.abc import Sequence
+
+from m365_auth import AuthenticationRequired, TokenProvider
+
+from sharepoint_connector import config
+from sharepoint_connector.domain.errors import ConnectorError
+
+EXIT_OK = 0
+EXIT_ERROR = 1
+EXIT_AUTH_REQUIRED = 2
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    try:
+        if args.command == "auth":
+            return _auth(args.sign_out)
+        if args.command == "status":
+            return _status(args.check)
+        if args.command == "mcp":
+            from sharepoint_connector.surfaces.mcp_main import serve_mcp
+
+            serve_mcp()
+            return EXIT_OK
+        raise AssertionError(f"Unknown command: {args.command}")
+    except AuthenticationRequired as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_AUTH_REQUIRED
+    except ConnectorError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    except KeyboardInterrupt:
+        return 130
+
+
+def _auth(sign_out: bool) -> int:
+    provider = TokenProvider(login_command=f"{config.CLI_NAME} auth")
+    if sign_out:
+        existed = provider.sign_out()
+        print("Signed out of the shared Microsoft account." if existed else "No shared sign-in to clear.")
+        return EXIT_OK
+    results = provider.bootstrap(show=lambda message: print(f"\n{message}\n", flush=True))
+    for result in results:
+        if result.ready:
+            print(f"[{result.profile}] Ready.")
+        else:
+            print(f"[{result.profile}] Not ready: {result.error}", file=sys.stderr)
+    if all(result.ready for result in results):
+        return EXIT_OK
+    return EXIT_AUTH_REQUIRED
+
+
+def _status(check: bool) -> int:
+    provider = TokenProvider(login_command=f"{config.CLI_NAME} auth")
+    status = provider.status()
+    print(f"Shared auth cache: {'present' if status.exists else 'not present'}")
+    for profile in status.profiles:
+        state = "signed in" if profile.signed_in else "needs sign-in"
+        print(f"[{profile.profile}] {state}")
+    if check:
+        try:
+            provider.get_token(config.GRAPH_PROFILE)
+            print(f"[{config.GRAPH_PROFILE}] token acquisition succeeded.")
+        except ConnectorError as exc:
+            print(f"[{config.GRAPH_PROFILE}] token acquisition failed: {exc}", file=sys.stderr)
+            return EXIT_AUTH_REQUIRED
+    return EXIT_OK
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog=config.CLI_NAME, description="Read-only OneDrive and SharePoint file connector."
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    auth = commands.add_parser("auth", help="Prepare or sign out of the shared Microsoft 365 profiles.")
+    auth.add_argument(
+        "--sign-out", action="store_true", help="Clear authentication for all three connectors."
+    )
+    status = commands.add_parser("status", help="Show cached shared sign-in state.")
+    status.add_argument("--check", action="store_true", help="Also acquire the Graph token silently.")
+    commands.add_parser("mcp", help="Run the stdio MCP server.")
+    return parser
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

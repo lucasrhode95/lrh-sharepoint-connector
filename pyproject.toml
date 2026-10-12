@@ -1,0 +1,40 @@
+[project]
+name = "sharepoint-connector"
+version = "0.1.0"
+description = "Read-only OneDrive and SharePoint file connector."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["mcp>=1.26,<2", "httpx>=0.27,<1", "pydantic>=2.11,<3", "lrh-m365-auth"]
+
+[project.scripts]
+sharepoint-connector = "sharepoint_connector.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "pyright>=1.1.400"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sharepoint_connector"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["research"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["research"]
+
+[tool.uv.sources]
+lrh-m365-auth = { git = "ssh://git@github.com/lucasrhode95/lrh-m365-auth.git", rev = "7fe3167c8e737d2e522185e8eb3f84e08457b584" }

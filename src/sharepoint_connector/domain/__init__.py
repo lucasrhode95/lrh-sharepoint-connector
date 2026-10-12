@@ -1,0 +1,1 @@
+"""SharePoint connector domain contracts."""

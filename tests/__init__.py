@@ -1,0 +1,1 @@
+"""Synthetic SharePoint connector tests."""
