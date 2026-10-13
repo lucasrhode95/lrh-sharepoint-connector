@@ -8,19 +8,31 @@ Microsoft Graph.
 - Download one selected file to this computer, within a bounded size.
 - Do not crawl libraries, build a local search index, or fetch file contents as part of search.
 
-## Ownership
+## Product boundaries
 
-The connectors follow the relationship the user is asking about:
+This repository is part of the `lrh-*` Microsoft 365 connectors: local tools that give MCP agents
+access to a common corporate environment, its mail and calendar, chats and meetings, and files. Each
+repository owns one product, and all of them share one sign-in.
 
-- Outlook owns email, email attachments and calendar events.
-- Teams owns chat/channel messages, message attachments and Teams meeting resources, including
-  recordings, transcripts, recaps and notes.
-- This connector owns general OneDrive and SharePoint file discovery and retrieval.
+| | Repository | Responsible for |
+|---|---|---|
+| <img src="docs/logos/entra-id.svg" height="20" alt="Entra ID"> | [lrh-m365-auth](https://github.com/lucasrhode95/lrh-m365-auth) | Shared Microsoft sign-in: one encrypted token cache and the profiles every connector uses |
+| <img src="docs/logos/outlook.svg" height="20" alt="Outlook"> | [lrh-outlook-connector](https://github.com/lucasrhode95/lrh-outlook-connector) | Exchange mail, folders, drafts, rules, native signatures, and calendar events (schedule, agenda, attendees, Teams join link) |
+| <img src="docs/logos/teams.svg" height="20" alt="Teams"> | [lrh-teams-connector](https://github.com/lucasrhode95/lrh-teams-connector) | Teams chats and channels, message attachments, and meeting chats, recordings, transcripts, recaps and notes |
+| <img src="docs/logos/sharepoint.svg" height="20" alt="SharePoint"> | [lrh-sharepoint-connector](https://github.com/lucasrhode95/lrh-sharepoint-connector) | General OneDrive and SharePoint file search and selected file retrieval (read-only) |
 
-A file can be linked from an email or Teams message. The SharePoint connector can retrieve the stored
-file, while Outlook or Teams retains responsibility for its message and relationship to that file.
-A calendar event remains Outlook-owned even when it links to a Teams meeting; Teams owns the meeting
-chat and artifacts.
+A calendar event stays with Outlook even when it links to a Teams meeting; Teams owns that meeting's
+chat and artifacts. A file linked from an email or a Teams message stays part of that message, while
+the stored file itself is retrieved through SharePoint. Only verified identifiers connect records
+across products.
+
+> [!WARNING]
+> These tools sign in as Microsoft's own apps and use undocumented Outlook and Teams services.
+> Giving an AI agent access to your work mail, chats or files may break your organization's policies
+> on AI use and data handling, so check with your IT or security team first. The tools are provided
+> as is, without warranty, and the authors are not responsible for any misuse or its consequences.
+> Microsoft, Outlook, Teams, SharePoint and Entra are trademarks of Microsoft; this project is not
+> affiliated with or endorsed by Microsoft.
 
 ## Requirements
 
