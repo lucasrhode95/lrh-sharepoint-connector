@@ -61,3 +61,80 @@ input bounds and file behavior consistent. Offline status distinguishes a cached
 credential from a resource-specific Graph access-token expiry; `status --check` tests token
 acquisition, not file-operation permission. Local downloads are the only product data retained by
 this connector.
+
+## MCP tools
+
+The stdio server exposes exactly these three tools. Authentication and status are CLI commands,
+not MCP tools.
+
+### Search and inspect
+
+- `search_files(query, offset=0, page_size=25, scope_url=null)` — asks Microsoft Search for driveItem
+  results. Page size is capped at 200. The response includes Graph resource IDs, name, available
+  location/type/size/date metadata, webUrl, rank, summary, total when returned, more-results state
+  and next_offset. Search snippets and names are untrusted text. Search does not download content.
+- `get_file_metadata(drive_id, item_id)` — reads metadata for one selected item using the exact resource
+  identifiers from a search result.
+
+### Retrieve a file
+
+- `download_file(drive_id, item_id, max_bytes=52428800)` — downloads one selected non-folder file.
+  The default is 50 MiB; the hard maximum is 100 MiB. The response gives a local path for the agent
+  to read with local file tools.
+
+Microsoft Search hitId is not a driveItem ID. Use drive_id and item_id taken from the result's
+resource object; results missing either ID can be opened by webUrl but cannot be hydrated by these
+tools.
+
+Example workflow:
+
+1. Search for a narrow topic, such as annual budget draft.
+2. Read the result snippet, location and dates. Request another page only when it could help.
+3. Hydrate metadata for a promising result using its drive_id and item_id.
+4. Download only the selected file if its contents are needed.
+
+Search ranks matches; it is not exhaustive recall. An empty result can reflect indexing delay,
+content-type limits, access rights, query syntax or scope constraints. Do not infer that a library
+contains no matching file from one empty result. Microsoft Search does not promise a complete
+organization-wide corpus outside files the signed-in account can access.
+
+### Scope, paging and indexing
+
+The optional scope_url adds a Graph KQL path constraint to the search query. Scoped queries accept
+plain terms only, so a query cannot add KQL operators that broaden the scope. A rejected scoped
+request is returned as an error; the connector never retries it without the path constraint. Use a
+site, library or folder URL without query/fragment parameters. Scope behavior remains subject to
+known-hit tests passed for representative OneDrive and shared SharePoint parent URLs in one
+account. Other URL forms and tenants remain deployment-specific; a zero result is not proof the scope
+contains no files.
+
+Use next_offset only when more_results_available is true. The offset is explicit and stable for one
+request, but Graph Search ranking and indexing can change between pages. Search returns files the
+current account can access. It can match names and supported file content; it does not identify
+which internal part matched, and snippets can be incomplete.
+
+New or changed files may take time to appear in Microsoft Search. Graph does not provide an
+indexing-completion signal or an exhaustive recall guarantee.
+
+### Metadata and downloads
+
+Metadata comes from GET /drives/{drive-id}/items/{item-id}; the exact route reference is returned
+from resource.id and resource.parentReference.driveId. Metadata includes the Graph webUrl, name,
+file type, size, dates and parent path when Graph returns them.
+
+Downloads use GET /drives/{drive-id}/items/{item-id}/content. The connector streams bytes to the
+local downloads directory, checks the configured maximum while receiving, rejects unsafe redirect
+hosts, and does not forward the Graph bearer token to a preauthenticated download host. It keeps
+the file bytes unchanged and does not extract document text. A failed or oversized transfer removes
+the partial file. Existing files are not overwritten; a numeric suffix is added to a duplicate name.
+
+Default Windows output:
+
+~~~text
+%LOCALAPPDATA%\lrh-sharepoint-connector\downloads\<account-fingerprint>\
+~~~
+
+Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads remain on disk for the user to
+manage; uninstalling the connector does not delete them. They are separated by the account
+fingerprint so a later shared-account switch does not return earlier downloads as current-account
+data.
