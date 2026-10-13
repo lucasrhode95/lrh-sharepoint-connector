@@ -26,7 +26,6 @@ chat and artifacts.
 
 - Windows, macOS or Linux.
 - Python 3.12 or newer; uv.
-- GitHub SSH access to the private lrh-m365-auth repository before dependency installation.
 - A Microsoft 365 work or school account with access to the target files.
 
 The connector requests the shared auth package's outlook.graph profile. It requests Graph Mail.Read
