@@ -2,14 +2,9 @@
 
 ## Layers
 
-This is a single-user local application with one user-facing surface:
+This is a single-user local application with one user-facing surface, the MCP server.
 
-~~~text
-MCP stdio -> service.Files -> remote.FileRepository -> remote.Graph -> Microsoft Graph
-                                  |
-                                  +-> explicitly selected local downloads
-                         shared m365-auth
-~~~
+![SharePoint connector architecture](diagrams/architecture.svg)
 
 The MCP surface owns tool names, schemas and MCP transport. It calls the service; it does not know
 Graph URLs or map wire responses. Service methods validate public inputs and own decisions about

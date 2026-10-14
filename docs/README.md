@@ -7,5 +7,7 @@
 | [Roadmap](roadmap.md) | Open work and validation |
 | [API research](api-research.md) | Dated evidence of what Microsoft Graph file search and retrieval allow |
 
+Diagram: [architecture](diagrams/architecture.svg).
+
 Start with the [repository README](../README.md), then the architecture. The research is a dated
 evidence log: read the section you need, not the whole file.

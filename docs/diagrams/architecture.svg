@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="1510" viewBox="0 0 2600 1510" role="img" aria-labelledby="title description">
+  <title id="title">SharePoint connector architecture</title>
+  <desc id="description">A read-only connector. The MCP server (one stdio process per agent session) exposes three tools over one file service. The service depends on the FileRepository port, implemented by the Graph adapter, which calls Microsoft Search for driveItem results and reads selected item metadata and content. Content downloads follow Graph's redirect to a SharePoint or OneDrive host without forwarding the token, and only user-selected files are kept on disk, in an account-specific folder. Tokens come from the shared lrh-m365-auth cache through the outlook.graph profile.</desc>
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; }
+      .title { fill: #183153; font-size: 50px; font-weight: 700; }
+      .subtitle { fill: #183153; font-size: 30px; }
+      .card-title { fill: #fff; font-size: 30px; font-weight: 700; }
+      .card-subtitle { fill: #c8d8e8; font-size: 20px; }
+      .section-title { fill: #183153; font-size: 24px; font-weight: 700; }
+      .detail { fill: #53677b; font-size: 21px; }
+      .muted { fill: #8496a8; font-size: 20px; font-style: italic; }
+      .code { font-family: "Courier New", Consolas, monospace; font-weight: 700; }
+      .badge { fill: #fff; font-size: 17px; font-weight: 700; }
+      .note-title { fill: #086d68; font-size: 23px; font-weight: 700; }
+      .flow-label { fill: #53677b; font-size: 20px; }
+      .call-flow { fill: none; stroke: #71869b; stroke-width: 2.6; stroke-linecap: square; stroke-linejoin: miter; marker-end: url(#arrow); }
+      .api-flow { fill: none; stroke: #4b7187; stroke-width: 2.8; stroke-linecap: square; marker-end: url(#api-arrow); }
+      .local-flow { fill: none; stroke: #7650a4; stroke-width: 2.8; stroke-linecap: square; marker-end: url(#purple-arrow); }
+    </style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L9 4.5 L0 9 Z" fill="#71869b"/></marker>
+    <marker id="api-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4b7187"/></marker>
+    <marker id="purple-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L9 4.5 L0 9 Z" fill="#7650a4"/></marker>
+  </defs>
+
+  <rect width="2600" height="1510" fill="#fff"/>
+  <text class="title" x="1300" y="70" text-anchor="middle">SharePoint connector architecture</text>
+  <text class="subtitle" x="1300" y="110" text-anchor="middle">Read-only · Microsoft Search for files · selected metadata and downloads · nothing indexed or cached</text>
+
+  <!-- MCP surface. -->
+  <rect x="80" y="170" width="790" height="210" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M80 244 V184 Q80 170 94 170 H856 Q870 170 870 184 V244 Z" fill="#183153"/>
+  <text class="card-title" x="100" y="203">MCP SERVER</text>
+  <text class="card-subtitle" x="100" y="227"><tspan class="code">sharepoint-connector mcp</tspan> · one stdio process per agent session</text>
+  <rect x="100" y="260" width="750" height="100" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="detail" x="120" y="292"><tspan class="code">surfaces/mcp_main.py</tspan>: 3 read-only tools</text>
+  <text class="detail" x="120" y="320"><tspan class="code">search_files</tspan> · <tspan class="code">get_file_metadata</tspan> · <tspan class="code">download_file</tspan></text>
+  <text class="detail" x="120" y="348">Started by Claude Code, Codex or Copilot on demand</text>
+
+  <!-- Read-only note. -->
+  <rect x="910" y="170" width="790" height="210" rx="14" fill="#eff8f6" stroke="#9fd3cb" stroke-width="1.5"/>
+  <text class="note-title" x="934" y="210">Read-only by design</text>
+  <text class="detail" x="934" y="246">No browser UI, no search index, no metadata cache and no</text>
+  <text class="detail" x="934" y="274">background work. <tspan class="code">mcp</tspan>, <tspan class="code">auth</tspan> and <tspan class="code">status</tspan> are short-lived</text>
+  <text class="detail" x="934" y="302">processes. The only data kept is a file the user selected</text>
+  <text class="detail" x="934" y="330">for download. There is no Microsoft 365 write operation.</text>
+
+  <path class="call-flow" d="M475 380 V446"/>
+  <text class="flow-label" x="495" y="420">calls</text>
+
+  <!-- Service. -->
+  <rect x="80" y="450" width="1620" height="340" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M80 524 V464 Q80 450 94 450 H1686 Q1700 450 1700 464 V524 Z" fill="#183153"/>
+  <text class="card-title" x="100" y="483">SERVICE</text>
+  <text class="card-subtitle" x="100" y="507"><tspan class="code">service/files.py</tspan> · <tspan class="code">Files</tspan> · validates input once; owns page bounds, path scope, size limits and local output</text>
+
+  <rect x="100" y="544" width="510" height="160" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title code" x="116" y="580">search_files</text>
+  <text class="detail" x="116" y="615">one page of driveItem hits (≤ 200)</text>
+  <text class="detail" x="116" y="643">optional site, library or folder scope</text>
+  <text class="detail" x="116" y="671">explicit offsets · recall not exhaustive</text>
+
+  <rect x="630" y="544" width="510" height="160" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title code" x="646" y="580">get_file_metadata</text>
+  <text class="detail" x="646" y="615">one selected item, by the drive and</text>
+  <text class="detail" x="646" y="643">item ids from a search result (never</text>
+  <text class="detail" x="646" y="671">the Search hit id)</text>
+
+  <rect x="1160" y="544" width="520" height="160" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title code" x="1176" y="580">download_file</text>
+  <text class="detail" x="1176" y="615">one selected file, bytes unchanged</text>
+  <text class="detail" x="1176" y="643">50 MiB by default, 100 MiB at most</text>
+  <text class="detail" x="1176" y="671">partial files removed · no overwrite</text>
+
+  <rect x="100" y="720" width="1580" height="50" fill="#eff8f6"/>
+  <text class="detail" x="118" y="753"><tspan class="code" fill="#086d68">domain/models.py</tspan>: compact typed results  ·  <tspan class="code" fill="#086d68">domain/errors.py</tspan>: a permission error is never reported as a sign-in problem</text>
+
+  <path class="local-flow" d="M340 790 V856"/>
+  <text class="flow-label" x="360" y="830">selected files</text>
+  <path class="call-flow" d="M1170 790 V856"/>
+  <text class="flow-label" x="1190" y="830">calls through the port</text>
+
+  <!-- Local downloads. -->
+  <rect x="80" y="860" width="520" height="300" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M80 934 V874 Q80 860 94 860 H586 Q600 860 600 874 V934 Z" fill="#183153"/>
+  <text class="card-title" x="100" y="893">LOCAL FILES</text>
+  <text class="card-subtitle" x="100" y="917">downloads only</text>
+  <rect x="100" y="950" width="480" height="190" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="detail" x="120" y="985"><tspan class="code">downloads/&lt;account&gt;/</tspan></text>
+  <text class="detail" x="120" y="1015">one folder per account fingerprint</text>
+  <text class="detail" x="120" y="1045">exclusive names, numbered on a clash</text>
+  <text class="muted" x="120" y="1095">Not stored: search results,</text>
+  <text class="muted" x="120" y="1123">metadata, an index or tokens</text>
+
+  <!-- Remote. -->
+  <rect x="640" y="860" width="1060" height="300" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M640 934 V874 Q640 860 654 860 H1686 Q1700 860 1700 874 V934 Z" fill="#183153"/>
+  <text class="card-title" x="660" y="893">REMOTE</text>
+  <text class="card-subtitle" x="660" y="917"><tspan class="code">remote/</tspan> · the only code that knows Graph URLs, request bodies and paging</text>
+  <rect x="660" y="950" width="330" height="190" fill="#f2f7fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title code" x="676" y="985" style="font-size:22px">ports.py</text>
+  <text class="detail" x="676" y="1019" style="font-size:19px"><tspan class="code">FileRepository</tspan></text>
+  <text class="detail" x="676" y="1047" style="font-size:19px">• <tspan class="code">search_drive_items</tspan></text>
+  <text class="detail" x="676" y="1073" style="font-size:19px">• <tspan class="code">get_drive_item</tspan></text>
+  <text class="detail" x="676" y="1099" style="font-size:19px">• <tspan class="code">download_drive_item</tspan></text>
+  <rect x="1010" y="950" width="670" height="190" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title code" x="1026" y="985" style="font-size:22px">graph.py</text>
+  <text class="detail" x="1026" y="1019" style="font-size:19px"><tspan class="code">Graph</tspan> implements <tspan class="code">FileRepository</tspan> and does its own HTTP</text>
+  <text class="detail" x="1026" y="1047" style="font-size:19px">• maps drive and item ids from each hit's resource</text>
+  <text class="detail" x="1026" y="1073" style="font-size:19px">• bounded read retries, Retry-After up to 30 s</text>
+  <text class="detail" x="1026" y="1099" style="font-size:19px">• download redirect: HTTPS host allowlist, no token sent</text>
+
+  <!-- Sign-in. -->
+  <rect x="80" y="1210" width="520" height="200" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M80 1284 V1224 Q80 1210 94 1210 H586 Q600 1210 600 1224 V1284 Z" fill="#183153"/>
+  <text class="card-title" x="100" y="1243">SIGN-IN</text>
+  <text class="card-subtitle" x="100" y="1267"><tspan class="code">sharepoint-connector auth</tspan></text>
+  <rect x="100" y="1298" width="480" height="92" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="detail" x="120" y="1332">Device code happens only here;</text>
+  <text class="detail" x="120" y="1362">tools never prompt.</text>
+  <path class="call-flow" d="M600 1340 H636"/>
+
+  <!-- Tokens. -->
+  <rect x="640" y="1210" width="1060" height="200" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M640 1284 V1224 Q640 1210 654 1210 H1686 Q1700 1210 1700 1224 V1284 Z" fill="#183153"/>
+  <text class="card-title" x="660" y="1243">TOKENS</text>
+  <text class="card-subtitle" x="660" y="1267"><tspan class="code">lrh-m365-auth</tspan> · profiles shared by every <tspan class="code">lrh-*</tspan> Microsoft 365 connector · encrypted · locked</text>
+  <rect x="660" y="1298" width="420" height="92" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <rect x="674" y="1310" width="32" height="26" rx="5" fill="#2b6cb0"/>
+  <text class="badge" x="690" y="1329" text-anchor="middle">G</text>
+  <text class="section-title" x="714" y="1330" style="font-size:21px">outlook.graph</text>
+  <text class="detail" x="674" y="1368" style="font-size:19px">Outlook Mobile · Graph</text>
+  <rect x="1100" y="1298" width="580" height="92" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="detail" x="1116" y="1332" style="font-size:19px">The only profile used here. File access comes from</text>
+  <text class="detail" x="1116" y="1360" style="font-size:19px">the account's own grants, not a minimum scope.</text>
+  <path class="call-flow" d="M830 1210 V1164"/>
+  <text class="flow-label" x="850" y="1194">bearer token per request</text>
+
+  <!-- Microsoft 365. -->
+  <rect x="1900" y="860" width="620" height="550" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M1900 934 V874 Q1900 860 1914 860 H2506 Q2520 860 2520 874 V934 Z" fill="#183153"/>
+  <text class="card-title" x="1920" y="893">MICROSOFT 365</text>
+  <text class="card-subtitle" x="1920" y="917">first-party public clients · no app registration</text>
+
+  <rect x="1920" y="950" width="580" height="130" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <rect x="1938" y="962" width="32" height="26" rx="5" fill="#2b6cb0"/>
+  <text class="badge" x="1954" y="981" text-anchor="middle">G</text>
+  <text class="section-title" x="1980" y="983">Microsoft Graph (documented)</text>
+  <text class="detail" x="1940" y="1016" style="font-size:18px"><tspan class="code">POST /search/query</tspan> · <tspan class="code">driveItem</tspan></text>
+  <text class="detail" x="1940" y="1044" style="font-size:18px"><tspan class="code">GET /drives/{d}/items/{i}</tspan> · <tspan class="code">…/content</tspan></text>
+
+  <rect x="1920" y="1092" width="580" height="96" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="1940" y="1126">SharePoint and OneDrive hosts</text>
+  <text class="detail" x="1940" y="1160" style="font-size:18px">preauthenticated download, reached by redirect</text>
+
+  <rect x="1920" y="1298" width="580" height="92" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="1940" y="1332">Entra ID</text>
+  <text class="detail" x="1940" y="1364" style="font-size:18px"><tspan class="code">login.microsoftonline.com</tspan> · device code · refresh</text>
+
+  <path class="api-flow" d="M1700 1015 H1916"/>
+  <text class="flow-label" x="1800" y="1003" text-anchor="middle" style="font-size:18px">Graph calls</text>
+  <path class="api-flow" d="M1700 1140 H1916"/>
+  <text class="flow-label" x="1800" y="1128" text-anchor="middle" style="font-size:18px">302, no token</text>
+  <path class="call-flow" d="M1700 1344 H1916"/>
+  <text class="flow-label" x="1800" y="1332" text-anchor="middle" style="font-size:18px">sign-in / refresh</text>
+
+  <!-- Legend. -->
+  <rect x="80" y="1460" width="32" height="26" rx="5" fill="#2b6cb0"/>
+  <text class="badge" x="96" y="1479" text-anchor="middle">G</text>
+  <text class="flow-label" x="122" y="1480">Graph profile</text>
+  <path class="api-flow" d="M330 1473 H400"/>
+  <text class="flow-label" x="412" y="1480">API call over HTTPS</text>
+  <path class="local-flow" d="M700 1473 H770"/>
+  <text class="flow-label" x="782" y="1480">local write</text>
+  <path class="call-flow" d="M960 1473 H1030"/>
+  <text class="flow-label" x="1042" y="1480">call / dependency (points to the callee)</text>
+  <text class="flow-label" x="1900" y="1480">The surface never calls <tspan class="code">remote/</tspan> directly.</text>
+</svg>
