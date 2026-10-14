@@ -168,7 +168,7 @@ uv run pyright
 uv run pytest
 ```
 
-Project references: [requirements](docs/requirements.md) · [architecture](docs/architecture.md) · [Graph API research](docs/api-research.md) · [roadmap](docs/roadmap.md).
+Project references: [documentation index](docs/README.md) · [requirements](docs/requirements.md) · [architecture](docs/architecture.md) · [Graph API research](docs/api-research.md) · [roadmap](docs/roadmap.md).
 
 ## Disclaimer
 
