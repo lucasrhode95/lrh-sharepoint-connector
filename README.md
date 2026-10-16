@@ -1,4 +1,4 @@
-# SharePoint for MCP clients
+![Local MCP clients and the read-only SharePoint connector, which searches and downloads OneDrive and SharePoint files through Microsoft Graph.](https://raw.githubusercontent.com/lucasrhode95/lrh-sharepoint-connector/main/docs/connector-overview.svg)
 
 A local, read-only MCP server for finding and retrieving files from OneDrive and SharePoint through
 Microsoft Graph.
@@ -124,22 +124,6 @@ The MCP server exposes the tools below; authentication and status are CLI comman
 | `get_file_metadata` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Read metadata for one selected result |
 | `download_file` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Download one selected file locally (50 MiB by default, 100 MiB at most) |
 
-## Troubleshooting and data
-
-- Missing profile: run sharepoint-connector auth in a terminal and complete Microsoft's prompts.
-- Graph 403: the token may be present while file search or the selected item is not granted. Check
-  the exact operation and account access; signing in again does not itself add permission.
-- Graph 401: refresh or prepare the shared profile with the auth command.
-- Empty results: allow time for Microsoft Search indexing; compare a known filename/content marker
-  in Microsoft 365 before claiming a coverage gap.
-- Throttling: wait as Graph directs, then retry. The connector applies bounded retries for transient
-  reads and has no Microsoft 365 write operations.
-- The connector stores no file index or search cache. Only explicitly downloaded files are kept.
-- Removing this repository does not remove the shared token cache or local downloads. Signing out
-  through any connector clears authentication for all three products.
-- `auth` reports an incomplete setup when any shared profile is missing, even when the Graph profile
-  this connector uses is ready.
-
 ## Microsoft 365 connectors
 
 This repository is part of the `lrh-*` **Microsoft 365** connectors: local tools that give MCP agents
@@ -173,12 +157,10 @@ Project references: [documentation index](docs/README.md) · [requirements](docs
 ## Disclaimer
 
 > [!WARNING]
-> These tools sign in as Microsoft's own apps and use undocumented Outlook and Teams services.
-> Giving an AI agent access to your work mail, chats or files may break your organization's policies
-> on AI use and data handling, so check with your IT or security team first. The tools are provided
-> as is, without warranty, and the authors are not responsible for any misuse or its consequences.
-> Microsoft, Outlook, Teams, SharePoint and Entra are trademarks of Microsoft; this project is not
-> affiliated with or endorsed by Microsoft.
+> Unofficial: these tools sign in as Microsoft's own apps and use undocumented services. Check your
+> organization's AI and data policies before giving an agent your work data. Provided as is, without
+> warranty. Microsoft, Outlook, Teams, SharePoint and Entra are Microsoft trademarks; this project is
+> not affiliated with Microsoft.
 
 ## License
 
