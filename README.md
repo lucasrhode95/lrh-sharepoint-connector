@@ -1,4 +1,4 @@
-![Local MCP clients and the read-only SharePoint connector, which searches and downloads OneDrive and SharePoint files through Microsoft Graph.](docs/connector-overview.svg)
+![Local MCP clients and the read-only SharePoint connector, which searches and downloads OneDrive and SharePoint files through Microsoft Graph.](https://raw.githubusercontent.com/lucasrhode95/lrh-sharepoint-connector/main/docs/connector-overview.svg)
 
 A local, read-only MCP server for finding and retrieving files from OneDrive and SharePoint through
 Microsoft Graph.
