@@ -18,7 +18,8 @@ from sharepoint_connector.service import localfiles
 
 _SCOPE_QUERY_OPERATOR = re.compile(r'\b(?:AND|OR|NOT)\b|["():*]', re.IGNORECASE)
 _BAD_FILENAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-_RESERVED_WINDOWS_NAME = re.compile(r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$", re.IGNORECASE)
+# Win32 device names, superscript digits included ("Naming Files, Paths, and Namespaces").
+_RESERVED_WINDOWS_NAME = re.compile(r"^(CON|PRN|AUX|NUL|COM[0-9¹²³]|LPT[0-9¹²³]) *(?:\..*)?$", re.IGNORECASE)
 
 
 class Files:
