@@ -30,5 +30,7 @@ def test_status_reports_client_cache_and_resource_token_separately(monkeypatch, 
 
     assert cli.main(["status"]) == 0
     output = capsys.readouterr().out
-    assert "[teams.spaces] client credential cached; access token expires 2033-05-18T03:33:20+00:00" in output
-    assert "[teams.csa] client credential cached; access token expires not cached" in output
+    assert "[teams.spaces] chat" in output
+    assert "client credential cached; access token valid until 2033-05-18T03:33:20+00:00" in output
+    assert "[teams.csa] catalog" in output
+    assert "client credential cached; access token valid until -" in output

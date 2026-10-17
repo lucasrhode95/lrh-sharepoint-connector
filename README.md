@@ -80,10 +80,11 @@ Replace the sample path with your clone’s absolute path. In Windows JSON paths
 
 ## MCP tools
 
-The MCP server exposes the tools below; authentication and status are CLI commands, not MCP tools. Each one's inputs, results and caveats are in [architecture](docs/architecture.md#6-mcp-tools).
+The MCP server exposes the tools below. Sign-in itself (`auth`) is a CLI command; `auth_status` reports offline whether it is needed. Each one's inputs, results and caveats are in [architecture](docs/architecture.md#6-mcp-tools).
 
 | MCP tool | Service module | Behavior |
 |---|---|---|
+| `auth_status` | shared auth provider | Offline: the signed-in account, each profile's cached credential and token expiry, and the sign-in command |
 | `search_files` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Search accessible OneDrive and SharePoint files through Microsoft Search, one page at a time |
 | `get_file_metadata` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Read metadata for one selected result |
 | `download_file` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Download one selected file locally (50 MiB by default, 100 MiB at most) |

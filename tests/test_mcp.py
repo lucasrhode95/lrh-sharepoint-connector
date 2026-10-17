@@ -37,7 +37,7 @@ async def test_mcp_exposes_only_read_only_file_tools_and_uses_service_contract(t
     server = build_server(FakeContext(files))
     tools = {tool.name: tool for tool in await server.list_tools()}
 
-    assert set(tools) == {"search_files", "get_file_metadata", "download_file"}
+    assert set(tools) == {"auth_status", "search_files", "get_file_metadata", "download_file"}
     assert all(tool.annotations and tool.annotations.readOnlyHint for tool in tools.values())
     assert all(tool.annotations and not tool.annotations.destructiveHint for tool in tools.values())
     assert "does not fetch file bytes" in (server.instructions or "")
