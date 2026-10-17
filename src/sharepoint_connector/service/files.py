@@ -109,7 +109,13 @@ class Files:
         if metadata.size_bytes is not None and metadata.size_bytes > max_bytes:
             raise DownloadLimitExceeded(max_bytes)
         output_dir = self._download_directory()
-        path, file = _create_exclusive(output_dir, _safe_filename(metadata.name))
+        try:
+            path, file = _create_exclusive(output_dir, _safe_filename(metadata.name))
+        except FileNotFoundError:
+            # Another process's cleanup removed the folder (empty and a week old) after mkdir. A recreated
+            # folder is fresh, so cleanup leaves it alone for a week: one retry is enough.
+            output_dir.mkdir(parents=True, exist_ok=True)
+            path, file = _create_exclusive(output_dir, _safe_filename(metadata.name))
         try:
             content_type, size = await self._repository.download_drive_item(
                 drive_id, item_id, file, max_bytes=max_bytes

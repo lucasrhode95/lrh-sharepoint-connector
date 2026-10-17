@@ -107,3 +107,20 @@ async def test_downloads_older_than_a_week_are_removed_on_the_next_download(tmp_
     # The expired file is gone, so the new download takes the plain name instead of "sample (1).txt".
     assert fresh.filename == "sample.txt"
     assert [path.name for path in fresh.path.parent.iterdir()] == ["sample.txt"]
+
+
+@pytest.mark.asyncio
+async def test_a_folder_removed_by_another_cleanup_before_the_claim_is_recreated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    files = Files(FakeRepository(), account_fingerprint="acct")
+    real = files._download_directory  # pyright: ignore[reportPrivateUsage]
+
+    def removed_after_mkdir() -> Path:
+        folder = real()
+        folder.rmdir()  # another process's cleanup removes the empty folder meanwhile
+        return folder
+
+    monkeypatch.setattr(files, "_download_directory", removed_after_mkdir)
+    saved = await files.download_file("drive", "item")
+    assert saved.path.read_bytes() == b"data" and saved.path.parent.name == "acct"
