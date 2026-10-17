@@ -63,7 +63,9 @@ connector-specific plaintext token cache is created.
 The connector stores no durable search index or file metadata cache. A selected download is streamed
 with a default 50 MiB limit and a hard 100 MiB cap, to an exclusive account-fingerprinted output
 folder. Redirects from Graph must use an approved Microsoft file host, and the bearer token is never
-sent to that host. A failed transfer removes partial output.
+sent to that host. A failed transfer removes partial output. Downloaded files are kept for seven
+days: the next download removes older files from every account's download folder, except a file
+another process holds open, which a later download removes. Nothing deletes them in the background.
 
 ## 6. User and operator behavior
 

@@ -6,8 +6,14 @@ import httpx
 import pytest
 from m365_auth import Account, AccountMismatch
 
+from sharepoint_connector import config
 from sharepoint_connector.bootstrap import AppContext
 from tests.fakes import FakeTokens
+
+
+@pytest.fixture(autouse=True)
+def _data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
 
 
 @pytest.mark.asyncio
@@ -39,7 +45,7 @@ async def test_services_and_stale_requests_follow_active_account(tmp_path: Path)
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        context = AppContext(tokens=tokens, http_client=client, output_home=tmp_path)
+        context = AppContext(tokens=tokens, http_client=client)
         first = await context.services()
         tokens.tenant = "tenant-b"
         tokens.object_id = "person-b"

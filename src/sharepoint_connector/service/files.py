@@ -28,11 +28,9 @@ class Files:
         self,
         repository: FileRepository,
         *,
-        output_home: Path | None = None,
         account_fingerprint: str = "active",
     ) -> None:
         self._repository = repository
-        self._output_home = output_home
         self._account_fingerprint = account_fingerprint
 
     async def search_files(
@@ -124,7 +122,7 @@ class Files:
 
     def _download_directory(self) -> Path:
         """This account's download folder; downloads older than a week are removed when it is next used."""
-        folder = localfiles.kept_dir("downloads", root=self._output_home) / self._account_fingerprint
+        folder = localfiles.kept_dir("downloads") / self._account_fingerprint
         folder.mkdir(parents=True, exist_ok=True)
         return folder
 

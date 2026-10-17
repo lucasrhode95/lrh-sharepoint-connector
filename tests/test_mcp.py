@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from mcp.server.fastmcp import FastMCP
 
+from sharepoint_connector import config
 from sharepoint_connector.service.files import Files
 from sharepoint_connector.surfaces.mcp_main import build_server
 from tests.fakes import FakeRepository
+
+
+@pytest.fixture(autouse=True)
+def _data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
 
 
 class FakeContext:
@@ -33,7 +40,7 @@ async def _call(server: FastMCP, name: str, **arguments: Any) -> Any:
 @pytest.mark.asyncio
 async def test_mcp_exposes_only_read_only_file_tools_and_uses_service_contract(tmp_path) -> None:
     repository = FakeRepository()
-    files = Files(repository, output_home=tmp_path, account_fingerprint="acct")
+    files = Files(repository, account_fingerprint="acct")
     server = build_server(FakeContext(files))
     tools = {tool.name: tool for tool in await server.list_tools()}
 
