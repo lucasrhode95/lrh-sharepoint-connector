@@ -39,6 +39,11 @@ references from each hit's resource and parentReference. It never maps the Searc
 ID. The service exposes Graph's explicit from/size paging and moreResultsAvailable flag, while
 labeling total hits informational and recall non-exhaustive.
 
+Domain errors are the same in every `lrh-*` connector: `InvalidRequest` (with `DownloadLimitExceeded`: "The file
+exceeds the connector's N MiB download limit."), `NotFound`, `Throttled`, `Upstream`, `PermissionDenied` (HTTP 403:
+access denied for that account or item, never a sign-in problem; a kind of `Upstream`) and, for writes,
+`WriteOutcomeUnknown`, besides `AuthenticationRequired` and `AccountMismatch` from the shared sign-in.
+
 Metadata GETs /drives/{drive-id}/items/{item-id} with a bounded property selection. Download GETs the
 same item's /content route. Graph's 302 target is checked against a narrow HTTPS host suffix
 allowlist; subsequent preauthenticated requests omit Authorization. The response is streamed into
