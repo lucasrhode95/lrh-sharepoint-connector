@@ -50,7 +50,9 @@ def _remove_expired(directory: Path, cutoff: float) -> None:
                     _remove_empty(old)
             elif old.is_file():
                 _remove_if_expired(old, cutoff)
-        except OSError:  # removed by another process, or open elsewhere (Windows): kept for a later cleanup
+        # Removed by another process, or open elsewhere (Windows): kept for a later cleanup.
+        # Any other error is a real problem and still propagates.
+        except (FileNotFoundError, PermissionError):
             continue
 
 
