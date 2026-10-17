@@ -25,7 +25,7 @@ uv run sharepoint-connector status
 
 Run the `auth` command above and it logs you in. All `lrh-*` Microsoft 365 connectors share one login engine (`lrh-m365-auth`), so one login covers them all. Microsoft may ask for more than one approval, because the connectors use different Microsoft clients.
 
-`status` shows the signed-in account and its cached profiles without touching the network. To switch accounts, run `auth --sign-out`, then `auth` again. Which profile serves which tool is in [architecture](docs/architecture.md#authentication-and-account-binding).
+`status` shows the signed-in account and its cached profiles without touching the network. To switch accounts, run `auth --sign-out`, then `auth` again. Which profile serves which tool is in [architecture](docs/architecture.md#2-authentication-and-account-binding).
 
 > Credentials are entered only on Microsoft's sign-in page. Tokens stay in the shared encrypted cache
 > (`~/.lrh-m365-auth`, or `M365_AUTH_HOME`). If encryption is unavailable, sign-in fails closed.
@@ -80,7 +80,7 @@ Replace the sample path with your clone’s absolute path. In Windows JSON paths
 
 ## MCP tools
 
-The MCP server exposes the tools below; authentication and status are CLI commands, not MCP tools. Each one's inputs, results and caveats are in [architecture](docs/architecture.md#mcp-tools).
+The MCP server exposes the tools below; authentication and status are CLI commands, not MCP tools. Each one's inputs, results and caveats are in [architecture](docs/architecture.md#6-mcp-tools).
 
 | MCP tool | Service module | Behavior |
 |---|---|---|
@@ -119,7 +119,7 @@ uv run pytest
 `lrh-m365-auth` follows its `main` branch, and `uv.lock` records the exact commit. Run
 `uv lock --upgrade-package lrh-m365-auth` to move to its latest commit.
 
-Logs: each `mcp` process writes a daily-rotated file under `<data directory>/logs/`, kept for seven days. Set `SHAREPOINT_CONNECTOR_LOG_LEVEL=DEBUG` for request timings ([architecture](docs/architecture.md#logging)).
+Logs: each `mcp` process writes a daily-rotated file under `<data directory>/logs/`, kept for seven days. Set `SHAREPOINT_CONNECTOR_LOG_LEVEL=DEBUG` for request timings ([architecture](docs/architecture.md#5-logging)).
 
 Project references: [documentation index](docs/README.md) · [requirements](docs/requirements.md) · [architecture](docs/architecture.md) · [Graph API research](docs/api-research.md) · [roadmap](docs/roadmap.md).
 

@@ -1,6 +1,6 @@
 # Architecture
 
-## Layers
+## 1. Layers
 
 This is a single-user local application with one user-facing surface, the MCP server.
 
@@ -17,7 +17,7 @@ service decisions and remote APIs. There is no browser UI, SQLite store, search 
 task. The only durable output is a file explicitly selected by the user for download, isolated into
 a folder keyed by the active account fingerprint.
 
-## Authentication and account binding
+## 2. Authentication and account binding
 
 The connector uses lrh-m365-auth and the outlook.graph profile. It creates no duplicate MSAL client
 or token cache. Every public service context lookup obtains a current token, checks stable
@@ -32,7 +32,7 @@ message discovery; this connector does not use it, and it grants no SharePoint f
 A cached credential indicates only that OAuth state exists. Graph can still deny Search, metadata or
 one selected file. Search and file permission errors remain separate from sign-in readiness.
 
-## Graph adapter
+## 3. Graph adapter
 
 Search POSTs one driveItem entity request to /v1.0/search/query. The mapper takes actual drive/item
 references from each hit's resource and parentReference. It never maps the Search hitId into an item
@@ -53,7 +53,7 @@ The adapter retries read requests a bounded number of times for throttling and t
 errors, respecting numeric or date-form Retry-After values up to 30 seconds. Search POST is a
 read-only operation and is safe to retry. No Graph write adapter exists.
 
-## CLI and shared service boundary
+## 4. CLI and shared service boundary
 
 The CLI exposes auth, status and mcp commands. Authentication is explicit; starting the MCP process
 does not launch a login flow. MCP tools call the same Files service methods as each other, keeping
@@ -62,7 +62,7 @@ credential from a resource-specific Graph access-token expiry; `status --check` 
 acquisition, not file-operation permission. Local downloads are the only product data retained by
 this connector.
 
-## Logging
+## 5. Logging
 
 Each `mcp` process writes its own file, `<data directory>/logs/<command>-<start time>-<process id>.log`,
 rotated at midnight and kept seven days ([`logs.py`](../src/sharepoint_connector/logs.py), the same module in every
@@ -72,12 +72,12 @@ redacts bearer tokens, credential headers, assigned secrets and secret query par
 INFO). Records carry operational timings, statuses and counts, never message or file content, search
 terms, names, identifiers or tokens. The shared sign-in library logs through the same handlers.
 
-## MCP tools
+## 6. MCP tools
 
 The stdio server exposes exactly these three tools. Authentication and status are CLI commands,
 not MCP tools.
 
-### Search and inspect
+### 6.1 Search and inspect
 
 - `search_files(query, offset=0, page_size=25, scope_url=null)` — asks Microsoft Search for driveItem
   results. Page size is capped at 200. The response includes Graph resource IDs, name, available
@@ -86,7 +86,7 @@ not MCP tools.
 - `get_file_metadata(drive_id, item_id)` — reads metadata for one selected item using the exact resource
   identifiers from a search result.
 
-### Retrieve a file
+### 6.2 Retrieve a file
 
 - `download_file(drive_id, item_id, max_bytes=52428800)` — downloads one selected non-folder file.
   The default is 50 MiB; the hard maximum is 100 MiB. The response gives a local path for the agent
@@ -108,7 +108,7 @@ content-type limits, access rights, query syntax or scope constraints. Do not in
 contains no matching file from one empty result. Microsoft Search does not promise a complete
 organization-wide corpus outside files the signed-in account can access.
 
-### Scope, paging and indexing
+### 6.3 Scope, paging and indexing
 
 The optional scope_url adds a Graph KQL path constraint to the search query. Scoped queries accept
 plain terms only, so a query cannot add KQL operators that broaden the scope. A rejected scoped
@@ -126,7 +126,7 @@ which internal part matched, and snippets can be incomplete.
 New or changed files may take time to appear in Microsoft Search. Graph does not provide an
 indexing-completion signal or an exhaustive recall guarantee.
 
-### Metadata and downloads
+### 6.4 Metadata and downloads
 
 Metadata comes from GET /drives/{drive-id}/items/{item-id}; the exact route reference is returned
 from resource.id and resource.parentReference.driveId. Metadata includes the Graph webUrl, name,

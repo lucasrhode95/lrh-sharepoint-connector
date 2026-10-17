@@ -2,15 +2,28 @@
 
 Date: 2026-10-12.
 
-## Product boundary
+## 1. Product
 
-This local connector owns discovery and retrieval of general files in the signed-in user's OneDrive
-and SharePoint. Outlook owns email and email attachments; Teams owns messages, message attachments
-and Teams meeting resources. A linked file keeps its relationship with its originating email or
-Teams message in that product. Calendar events remain Outlook-owned; connected Teams meeting
-artifacts remain Teams-owned.
+A local, read-only connector for finding and retrieving general files in the signed-in user's
+OneDrive and SharePoint.
 
-## Read-only capabilities
+## 2. Ownership (2026-10-17)
+
+The same in every `lrh-*` connector. Each connector owns one product, and all share one sign-in
+(`lrh-m365-auth`):
+
+- **Outlook** owns Exchange mail and its attachments, and calendar events: schedule, recurrence, agenda,
+  organizer, invitees, event attachment metadata and any join link.
+- **Teams** owns chats and channels, message attachments, and a Teams meeting's chat, recordings,
+  transcripts, recap and notes.
+- **SharePoint** owns discovery and retrieval of general OneDrive and SharePoint files.
+
+A file linked from an email or a Teams message stays part of that message; the stored file itself is
+retrieved through SharePoint. Only verified identifiers connect records across products. A shared
+search endpoint, or a similar name, does not change who owns a resource, and a meeting on another
+platform does not become a Teams meeting.
+
+## 3. Read-only capabilities
 
 1. Search accessible OneDrive/SharePoint driveItems with Microsoft Graph Search. Return compact
    result identity, name, link, available metadata, rank and snippet.
@@ -24,7 +37,7 @@ Search never downloads file bodies. There is no local content index, background 
 browser UI, remote MCP endpoint, text extraction from file formats, upload, sharing change, permission
 mutation, delete, rename, move or organization-wide access claim.
 
-## Search contracts
+## 4. Search contracts
 
 - Search uses Microsoft Graph POST /v1.0/search/query with entityTypes driveItem.
 - The resource object's parentReference.driveId and resource.id are the hydration references.
@@ -37,7 +50,7 @@ mutation, delete, rename, move or organization-wide access claim.
   request. Known-hit scope tests passed for representative OneDrive and shared SharePoint parent URLs
   in the tested account; this does not establish every URL form or tenant behavior.
 
-## Access and persistence
+## 5. Access and persistence
 
 The connector uses the shared `outlook.graph` profile through lrh-m365-auth. The shared auth
 catalog bootstraps six profiles, including `m365.search` for Outlook calendar and Teams message
@@ -51,7 +64,7 @@ with a default 50 MiB limit and a hard 100 MiB cap, to an exclusive account-fing
 folder. Redirects from Graph must use an approved Microsoft file host, and the bearer token is never
 sent to that host. A failed transfer removes partial output.
 
-## User and operator behavior
+## 6. User and operator behavior
 
 Authentication bootstrap is explicit; ordinary data calls remain silent. Account switching uses the
 shared auth package's single-account binding and isolates local download directories by account
@@ -62,7 +75,7 @@ Offline status reports cached OAuth client credentials separately from a cached 
 expiry. `status --check` attempts token acquisition but does not prove Search, metadata or download
 authorization.
 
-## Acceptance evidence
+## 7. Acceptance evidence
 
 Deterministic tests use synthetic Graph responses. Live verification is deployment-specific and
 must separately cover a personal OneDrive item and a company SharePoint item, filename and
