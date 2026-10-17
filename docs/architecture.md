@@ -146,7 +146,7 @@ the partial file. Existing files are not overwritten; a numeric suffix is added 
 Default Windows output:
 
 ~~~text
-%LOCALAPPDATA%\lrh-sharepoint-connector\downloads\<account-fingerprint>\
+%USERPROFILE%/.lrh-sharepoint-connector/downloads/<account-fingerprint>/
 ~~~
 
 Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads remain on disk for the user to

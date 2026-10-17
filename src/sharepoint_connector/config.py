@@ -18,11 +18,20 @@ MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
 
 
 def data_dir() -> Path:
-    """Per-user data directory: ``SHAREPOINT_CONNECTOR_HOME``, else ``%LOCALAPPDATA%`` on Windows, else
-    ``$XDG_DATA_HOME`` or ``~/.local/share``, each with ``lrh-sharepoint-connector``."""
+    """Per-user application data directory. ``SHAREPOINT_CONNECTOR_HOME`` overrides it (tests, portability).
+
+    On Windows it is the .lrh-sharepoint-connector folder in the user profile, outside AppData: Windows
+    redirects files that packaged apps (such as the Claude desktop app, and the MCP servers it starts)
+    create under AppData into a private per-app copy, which a terminal and Explorer never see.
+    """
     override = os.environ.get("SHAREPOINT_CONNECTOR_HOME")
     if override:
-        return Path(override).expanduser()
-    if os.name == "nt" and os.environ.get("LOCALAPPDATA"):
-        return Path(os.environ["LOCALAPPDATA"]) / APP_NAME
-    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / APP_NAME
+        return Path(override).expanduser().resolve()
+    if _windows():
+        return Path.home() / f".{APP_NAME}"
+    root = os.environ.get("XDG_DATA_HOME")
+    return (Path(root) if root else Path.home() / ".local" / "share") / APP_NAME
+
+
+def _windows() -> bool:
+    return os.name == "nt"
