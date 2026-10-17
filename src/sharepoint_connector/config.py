@@ -13,7 +13,7 @@ GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
 DEFAULT_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 200
 MAX_OFFSET = 100_000
-MAX_CURSOR_CHARS = 2048  # a cursor is a few dozen characters; anything longer is not one we issued
+MAX_CURSOR_CHARS = 2048  # the longest cursor issued; a longer one was not issued by this connector
 DEFAULT_DOWNLOAD_BYTES = 50 * 1024 * 1024
 MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
 

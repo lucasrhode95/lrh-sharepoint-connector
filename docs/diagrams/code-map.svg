@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1520" viewBox="0 0 1800 1520" role="img" aria-labelledby="title description">
   <title id="title">SharePoint connector code map</title>
-  <desc id="description">The SharePoint connector's main classes and who calls whom. The command line prepares sign-in, shows status, or starts the MCP server after configuring logging. The MCP server's three tools call the Files service, which validates input and depends only on the FileRepository port. The Graph adapter implements that port with Microsoft Graph search, item metadata and content downloads, using tokens from the shared lrh-m365-auth sign-in. AppContext in bootstrap.py builds the services once per account. Hover an item for details.</desc>
+  <desc id="description">The SharePoint connector's main classes and who calls whom. The command line prepares sign-in, shows status, or starts the MCP server after configuring logging. The MCP server's four tools call the Files service, which validates input and depends only on the FileRepository port. The Graph adapter implements that port with Microsoft Graph search, item metadata and content downloads, using tokens from the shared lrh-m365-auth sign-in. AppContext in bootstrap.py builds the services once per account. Hover an item for details.</desc>
   <defs>
     <style>
       text { font-family: Arial, Helvetica, sans-serif; }
@@ -43,11 +43,12 @@
   <path d="M940 210 V154 Q940 140 954 140 H1726 Q1740 140 1740 154 V210 Z" fill="#183153"/>
   <text class="card-title" x="960" y="172">MCP SERVER</text>
   <text class="card-subtitle" x="960" y="196"><tspan class="code">surfaces/mcp_main.py</tspan> · <tspan class="code">build_server()</tspan> · FastMCP <tspan class="code">lrh-sharepoint-connector</tspan></text>
-  <rect x="960" y="226" width="760" height="144" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <rect x="960" y="226" width="760" height="156" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
   <g><title>Search accessible OneDrive and SharePoint files, one page at a time. Read-only. → Files.search_files</title><text class="detail" x="978" y="262">• <tspan class="code">search_files</tspan></text></g>
-  <g><title>Metadata for one selected result. Read-only. → Files.get_file_metadata</title><text class="detail" x="978" y="296">• <tspan class="code">get_file_metadata</tspan></text></g>
-  <g><title>Download one selected file locally (50 MiB by default, 100 MiB at most). → Files.download_file</title><text class="detail" x="978" y="330">• <tspan class="code">download_file</tspan></text></g>
-  <text class="muted" x="978" y="360">READ_ONLY and LOCAL_FILE annotations · stdio only</text>
+  <g><title>Metadata for one selected result. Read-only. → Files.get_file_metadata</title><text class="detail" x="978" y="292">• <tspan class="code">get_file_metadata</tspan></text></g>
+  <g><title>Download one selected file locally (50 MiB by default, 100 MiB at most). → Files.download_file</title><text class="detail" x="978" y="322">• <tspan class="code">download_file</tspan></text></g>
+  <g><title>Offline status: the signed-in account, each profile's cached credential and token expiry, and the sign-in command. No network call. → auth_status</title><text class="detail" x="978" y="352">• <tspan class="code">auth_status</tspan></text></g>
+  <text class="muted" x="978" y="374">READ_ONLY and LOCAL_FILE annotations · stdio only</text>
 
   <path class="call-flow" d="M460 390 V448"/>
   <path class="call-flow" d="M1340 390 V448"/>

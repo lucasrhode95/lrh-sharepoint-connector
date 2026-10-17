@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2600" height="1510" viewBox="0 0 2600 1510" role="img" aria-labelledby="title description">
   <title id="title">SharePoint connector architecture</title>
-  <desc id="description">A read-only connector. The MCP server (one stdio process per agent session) exposes three tools over one file service. The service depends on the FileRepository port, implemented by the Graph adapter, which calls Microsoft Search for driveItem results and reads selected item metadata and content. Content downloads follow Graph's redirect to a SharePoint or OneDrive host without forwarding the token, and only user-selected files are kept on disk, in an account-specific folder. Tokens come from the shared lrh-m365-auth cache through the outlook.graph profile.</desc>
+  <desc id="description">A read-only connector. The MCP server (one stdio process per agent session) exposes four tools over one file service. The service depends on the FileRepository port, implemented by the Graph adapter, which calls Microsoft Search for driveItem results and reads selected item metadata and content. Content downloads follow Graph's redirect to a SharePoint or OneDrive host without forwarding the token, and only user-selected files are kept on disk, in an account-specific folder. Tokens come from the shared lrh-m365-auth cache through the outlook.graph profile.</desc>
   <defs>
     <style>
       text { font-family: Arial, Helvetica, sans-serif; }
@@ -34,8 +34,8 @@
   <text class="card-title" x="100" y="203">MCP SERVER</text>
   <text class="card-subtitle" x="100" y="227"><tspan class="code">sharepoint-connector mcp</tspan> · one stdio process per agent session</text>
   <rect x="100" y="260" width="750" height="100" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
-  <text class="detail" x="120" y="292"><tspan class="code">surfaces/mcp_main.py</tspan>: 3 read-only tools</text>
-  <text class="detail" x="120" y="320"><tspan class="code">search_files</tspan> · <tspan class="code">get_file_metadata</tspan> · <tspan class="code">download_file</tspan></text>
+  <text class="detail" x="120" y="292"><tspan class="code">surfaces/mcp_main.py</tspan>: 4 read-only tools</text>
+  <text class="detail" x="120" y="320"><tspan class="code">search_files</tspan> · <tspan class="code">get_file_metadata</tspan> · <tspan class="code">download_file</tspan> · <tspan class="code">auth_status</tspan></text>
   <text class="detail" x="120" y="348">Started by Claude Code, Codex or Copilot on demand</text>
 
   <!-- Read-only note. -->

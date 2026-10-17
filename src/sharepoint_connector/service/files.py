@@ -68,8 +68,16 @@ class Files:
             query_string = f'{query} AND path:"{normalized_scope}"'
         remote = await self._repository.search_drive_items(query_string, offset=offset, page_size=page_size)
         next_cursor = None
+        coverage_note = remote.coverage_note
         if remote.next_offset is not None:
-            next_cursor = _encode_cursor(query, normalized_scope, page_size, remote.next_offset)
+            candidate = _encode_cursor(query, normalized_scope, page_size, remote.next_offset)
+            if len(candidate) <= config.MAX_CURSOR_CHARS:
+                next_cursor = candidate
+            else:  # too long to pass back: issue no cursor, and say why in the note
+                coverage_note = (
+                    "More results exist, but this query and scope are too long to continue paging; "
+                    f"shorten them to see more. {coverage_note}"
+                )
         return SearchPage(
             query=query,
             scope_url=normalized_scope,
@@ -78,7 +86,7 @@ class Files:
             more_results_available=remote.more_results_available,
             next_cursor=next_cursor,
             hits=remote.hits,
-            coverage_note=remote.coverage_note,
+            coverage_note=coverage_note,
         )
 
     async def get_file_metadata(self, drive_id: str, item_id: str) -> FileMetadata:
