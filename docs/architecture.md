@@ -57,6 +57,16 @@ credential from a resource-specific Graph access-token expiry; `status --check` 
 acquisition, not file-operation permission. Local downloads are the only product data retained by
 this connector.
 
+## Logging
+
+Each `mcp` process writes its own file, `<data directory>/logs/<command>-<start time>-<process id>.log`,
+rotated at midnight and kept seven days ([`logs.py`](../src/sharepoint_connector/logs.py), the same module in every
+`lrh-*` connector). The MCP server logs to its file only, since stdout carries the protocol. A filter
+redacts bearer tokens, credential headers, assigned secrets and secret query parameters; `httpx` and
+`httpcore`, which log full request URLs, are held at WARNING. `SHAREPOINT_CONNECTOR_LOG_LEVEL` sets the level (default
+INFO). Records carry operational timings, statuses and counts, never message or file content, search
+terms, names, identifiers or tokens. The shared sign-in library logs through the same handlers.
+
 ## MCP tools
 
 The stdio server exposes exactly these three tools. Authentication and status are CLI commands,

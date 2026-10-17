@@ -92,18 +92,7 @@ class Files:
             raise
 
     def _download_directory(self) -> Path:
-        if self._output_home is not None:
-            base = self._output_home
-        else:
-            root = os.environ.get("SHAREPOINT_CONNECTOR_HOME")
-            if root:
-                base = Path(root).expanduser()
-            elif os.name == "nt" and os.environ.get("LOCALAPPDATA"):
-                base = Path(os.environ["LOCALAPPDATA"]) / "lrh-sharepoint-connector"
-            else:
-                base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / (
-                    "lrh-sharepoint-connector"
-                )
+        base = self._output_home if self._output_home is not None else config.data_dir()
         return base / "downloads" / self._account_fingerprint
 
 

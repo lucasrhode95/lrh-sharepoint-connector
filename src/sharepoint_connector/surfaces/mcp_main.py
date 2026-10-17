@@ -37,7 +37,7 @@ the email or message relationship to this connector.
 
 
 def build_server(context: AppContext) -> FastMCP:
-    mcp = FastMCP("sharepoint-connector", instructions=INSTRUCTIONS)
+    mcp = FastMCP("lrh-sharepoint-connector", instructions=INSTRUCTIONS, log_level="WARNING")
 
     @mcp.tool(annotations=READ_ONLY)
     async def search_files(

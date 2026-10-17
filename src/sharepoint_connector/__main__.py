@@ -25,8 +25,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "status":
             return _status(args.check)
         if args.command == "mcp":
+            from sharepoint_connector.logs import configure_app_logging
             from sharepoint_connector.surfaces.mcp_main import serve_mcp
 
+            configure_app_logging("mcp")  # file only: stdout belongs to the MCP protocol from here on
             serve_mcp()
             return EXIT_OK
         raise AssertionError(f"Unknown command: {args.command}")
