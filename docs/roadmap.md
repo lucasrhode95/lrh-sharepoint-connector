@@ -21,7 +21,7 @@ dated result in the research record.
 ### Minimum permissions
 
 The tested account's existing file and site grants are broader than the shared profile's requested
-`Mail.Read` and `User.Read` ([research, "Permissions and shared auth"](api-research.md#permissions-and-shared-auth)),
+`Mail.Read` and `User.Read` ([research, "Permissions"](api-research.md#permissions)),
 so the live checks prove that account's access, not the scopes the connector needs. Repeat search,
 metadata and download on an account without those extra grants, and record which scope each needs.
 
@@ -33,5 +33,5 @@ for `outlook.graph` before relying on it for file access.
 ### Search latency
 
 One second-page search took 24.9 s while an immediate repeat took 2.5 s without `Retry-After`
-([research log, 2026-10-11](api-research.md#2026-10-11--synthetic-onedrive-and-shared-library-validation)).
+([research, 2026-10-11](api-research.md#paging-and-latency)).
 Measure a few paged searches before treating it as throttling or tuning page sizes.
