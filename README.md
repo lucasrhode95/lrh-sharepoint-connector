@@ -152,6 +152,9 @@ uv run pyright
 uv run pytest
 ```
 
+`lrh-m365-auth` follows its `main` branch, and `uv.lock` records the exact commit. Run
+`uv lock --upgrade-package lrh-m365-auth` to move to its latest commit.
+
 Project references: [documentation index](docs/README.md) · [requirements](docs/requirements.md) · [architecture](docs/architecture.md) · [Graph API research](docs/api-research.md) · [roadmap](docs/roadmap.md).
 
 ## Disclaimer
