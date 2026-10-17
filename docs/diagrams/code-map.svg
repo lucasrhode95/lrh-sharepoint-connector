@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1520" viewBox="0 0 1800 1520" role="img" aria-labelledby="title description">
+  <title id="title">SharePoint connector code map</title>
+  <desc id="description">The SharePoint connector's main classes and who calls whom. The command line prepares sign-in, shows status, or starts the MCP server after configuring logging. The MCP server's three tools call the Files service, which validates input and depends only on the FileRepository port. The Graph adapter implements that port with Microsoft Graph search, item metadata and content downloads, using tokens from the shared lrh-m365-auth sign-in. AppContext in bootstrap.py builds the services once per account. Hover an item for details.</desc>
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; }
+      .title { fill: #183153; font-size: 44px; font-weight: 700; }
+      .subtitle { fill: #183153; font-size: 24px; }
+      .card-title { fill: #fff; font-size: 26px; font-weight: 700; }
+      .card-subtitle { fill: #c8d8e8; font-size: 18px; }
+      .section-title { fill: #183153; font-size: 22px; font-weight: 700; }
+      .group-title { fill: #183153; font-size: 17px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+      .detail { fill: #53677b; font-size: 19px; }
+      .muted { fill: #8496a8; font-size: 18px; font-style: italic; }
+      .code { font-family: "Courier New", Consolas, monospace; font-weight: 700; }
+      .flow-label { fill: #53677b; font-size: 18px; }
+      g > title + text { cursor: help; }
+      g:hover > text { fill: #183153; }
+      .call-flow { fill: none; stroke: #71869b; stroke-width: 2.6; marker-end: url(#arrow); }
+      .impl-flow { fill: none; stroke: #71869b; stroke-width: 2.4; stroke-dasharray: 9 7; marker-end: url(#arrow); }
+      .api-flow { fill: none; stroke: #4b7187; stroke-width: 2.8; marker-end: url(#api-arrow); }
+    </style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L9 4.5 L0 9 Z" fill="#71869b"/></marker>
+    <marker id="api-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4b7187"/></marker>
+  </defs>
+  <rect width="1800" height="1520" fill="#fff"/>
+  <text class="title" x="900" y="64" text-anchor="middle">SharePoint connector code map</text>
+  <text class="subtitle" x="900" y="100" text-anchor="middle">Main classes and who calls whom · arrows point to the callee · hover an item for details</text>
+
+  <!-- Command line. -->
+  <rect x="60" y="140" width="800" height="250" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M60 210 V154 Q60 140 74 140 H846 Q860 140 860 154 V210 Z" fill="#183153"/>
+  <text class="card-title" x="80" y="172">COMMAND LINE</text>
+  <text class="card-subtitle" x="80" y="196"><tspan class="code">__main__.py</tspan> · <tspan class="code">main()</tspan> parses the command, then runs its branch</text>
+  <rect x="80" y="226" width="760" height="144" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <g><title>Prepares every shared profile, asking for a device code only when needed; --sign-out clears the shared sign-in. → TokenProvider.bootstrap / sign_out</title><text class="detail" x="98" y="262">• <tspan class="code">auth</tspan> [--sign-out]</text></g>
+  <g><title>Cached client credentials and token state, offline by default; --check acquires tokens. → TokenProvider.status</title><text class="detail" x="98" y="296">• <tspan class="code">status</tspan> [--check]</text></g>
+  <g><title>Configures the per-process log file, then serves MCP over stdio. → configure_app_logging("mcp"), serve_mcp()</title><text class="detail" x="98" y="330">• <tspan class="code">mcp</tspan>: <tspan class="code">configure_app_logging("mcp")</tspan> → <tspan class="code">serve_mcp()</tspan></text></g>
+  <text class="muted" x="98" y="360">exit codes for sign-in required and errors</text>
+
+  <!-- MCP server. -->
+  <rect x="940" y="140" width="800" height="250" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M940 210 V154 Q940 140 954 140 H1726 Q1740 140 1740 154 V210 Z" fill="#183153"/>
+  <text class="card-title" x="960" y="172">MCP SERVER</text>
+  <text class="card-subtitle" x="960" y="196"><tspan class="code">surfaces/mcp_main.py</tspan> · <tspan class="code">build_server()</tspan> · FastMCP <tspan class="code">lrh-sharepoint-connector</tspan></text>
+  <rect x="960" y="226" width="760" height="144" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <g><title>Search accessible OneDrive and SharePoint files, one page at a time. Read-only. → Files.search_files</title><text class="detail" x="978" y="262">• <tspan class="code">search_files</tspan></text></g>
+  <g><title>Metadata for one selected result. Read-only. → Files.get_file_metadata</title><text class="detail" x="978" y="296">• <tspan class="code">get_file_metadata</tspan></text></g>
+  <g><title>Download one selected file locally (50 MiB by default, 100 MiB at most). → Files.download_file</title><text class="detail" x="978" y="330">• <tspan class="code">download_file</tspan></text></g>
+  <text class="muted" x="978" y="360">READ_ONLY and LOCAL_FILE annotations · stdio only</text>
+
+  <path class="call-flow" d="M460 390 V448"/>
+  <path class="call-flow" d="M1340 390 V448"/>
+
+  <!-- Composition root. -->
+  <rect x="60" y="452" width="1680" height="110" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="80" y="490"><tspan class="code">AppContext</tspan><tspan class="detail" dx="12">bootstrap.py</tspan></text>
+  <g><title>Builds the services once per signed-in account and rebuilds them when the shared account changes; the token source is bound to that account.</title><text class="detail" x="80" y="528">• <tspan class="code">services()</tspan> → <tspan class="code">Services(account, files)</tspan>, rebuilt when the shared account changes</text></g>
+
+  <path class="call-flow" d="M900 562 V618"/>
+  <text class="flow-label" x="920" y="600"><tspan class="code">await services()</tspan> · domain models in, domain models out</text>
+
+  <!-- Service. -->
+  <rect x="60" y="622" width="1680" height="330" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M60 692 V636 Q60 622 74 622 H1726 Q1740 622 1740 636 V692 Z" fill="#183153"/>
+  <text class="card-title" x="80" y="654">SERVICE</text>
+  <text class="card-subtitle" x="80" y="678"><tspan class="code">service/</tspan> · every input is validated here, once</text>
+  <rect x="80" y="708" width="900" height="224" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="98" y="742"><tspan class="code">Files</tspan><tspan class="detail" dx="12">files.py</tspan></text>
+  <g><title>Validates the query, offset and page size; an optional scope URL becomes a KQL path: constraint that is never dropped. → FileRepository.search_drive_items</title><text class="detail" x="98" y="780">• <tspan class="code">search_files(query, offset, page_size, scope_url)</tspan></text></g>
+  <g><title>Validates the drive and item references from a search result. → FileRepository.get_drive_item</title><text class="detail" x="98" y="814">• <tspan class="code">get_file_metadata(drive_id, item_id)</tspan></text></g>
+  <g><title>Refuses folders and files over the limit, claims an exclusive local name in the account's download folder, and removes a partial file on failure. → FileRepository.download_drive_item</title><text class="detail" x="98" y="848">• <tspan class="code">download_file(drive_id, item_id, max_bytes)</tspan></text></g>
+  <text class="muted" x="98" y="908">uses <tspan class="code">FileRepository</tspan> · <tspan class="code">localfiles</tspan></text>
+
+  <rect x="1000" y="708" width="720" height="224" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="group-title" x="1018" y="742">Shared with the other connectors</text>
+  <g><title>Output folders under the data directory; files older than seven days are removed when the folder is next used.</title><text class="detail" x="1018" y="778">• <tspan class="code">service/localfiles.py</tspan>: <tspan class="code">kept_dir</tspan>, <tspan class="code">claim</tspan></text></g>
+  <g><title>A daily-rotated log file per process, with credential redaction.</title><text class="detail" x="1018" y="812">• <tspan class="code">logs.py</tspan>: <tspan class="code">configure_app_logging</tspan></text></g>
+  <g><title>InvalidRequest, DownloadLimitExceeded, NotFound, Throttled, Upstream, PermissionDenied.</title><text class="detail" x="1018" y="846">• <tspan class="code">domain/errors.py</tspan></text></g>
+  <g><title>FileMetadata, SearchHit, SearchPage and SavedFile.</title><text class="detail" x="1018" y="880">• <tspan class="code">domain/models.py</tspan>, <tspan class="code">config.py</tspan></text></g>
+
+  <path class="call-flow" d="M530 952 V1008"/>
+
+  <!-- Port. -->
+  <rect x="60" y="1012" width="1680" height="120" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="80" y="1050"><tspan class="code">FileRepository</tspan><tspan class="detail" dx="12">remote/ports.py · the only remote interface the service sees</tspan></text>
+  <g><title>One page of search hits with drive and item references, rank and snippet.</title><text class="detail" x="80" y="1090">• <tspan class="code">search_drive_items</tspan> · <tspan class="code">get_drive_item</tspan> · <tspan class="code">download_drive_item</tspan></text></g>
+
+  <path class="impl-flow" d="M530 1196 V1140"/>
+  <text class="flow-label" x="550" y="1176">implements</text>
+
+  <!-- Adapter. -->
+  <rect x="60" y="1200" width="1000" height="250" rx="14" fill="#f7f9fc" stroke="#c7d5e2" stroke-width="1.5"/>
+  <path d="M60 1270 V1214 Q60 1200 74 1200 H1046 Q1060 1200 1060 1214 V1270 Z" fill="#183153"/>
+  <text class="card-title" x="80" y="1232">ADAPTER</text>
+  <text class="card-subtitle" x="80" y="1256"><tspan class="code">remote/graph.py</tspan> · <tspan class="code">Graph</tspan> · the only code that knows Graph wire formats</text>
+  <rect x="80" y="1286" width="960" height="144" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
+  <g><title>Microsoft Search for driveItem with explicit offset paging.</title><text class="detail" x="98" y="1322">• <tspan class="code">POST /search/query</tspan> (<tspan class="code">driveItem</tspan>)</text></g>
+  <g><title>Selected metadata by drive and item id.</title><text class="detail" x="98" y="1356">• <tspan class="code">GET /drives/{drive}/items/{item}</tspan></text></g>
+  <g><title>Content download; the redirect to a preauthenticated host is followed without the Graph bearer.</title><text class="detail" x="98" y="1390">• <tspan class="code">GET …/content</tspan> → redirect followed without the bearer</text></g>
+  <text class="muted" x="98" y="1420">bounded retries for transient reads · 401/403/404/429 mapped to domain errors</text>
+
+  <!-- External services. -->
+  <rect x="1180" y="1200" width="560" height="110" rx="14" fill="#eef5f9" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="1200" y="1240">Microsoft Graph</text>
+  <text class="detail" x="1200" y="1278">OneDrive and SharePoint files the account can read</text>
+  <rect x="1180" y="1340" width="560" height="110" rx="14" fill="#eef5f9" stroke="#c7d5e2" stroke-width="1.5"/>
+  <text class="section-title" x="1200" y="1380"><tspan class="code">lrh-m365-auth</tspan> TokenProvider</text>
+  <text class="detail" x="1200" y="1418">the shared <tspan class="code">outlook.graph</tspan> sign-in, account-bound</text>
+  <path class="api-flow" d="M1060 1255 H1172"/>
+  <path class="api-flow" d="M1060 1395 H1172"/>
+</svg>
