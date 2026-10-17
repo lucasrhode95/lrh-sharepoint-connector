@@ -36,12 +36,12 @@ one selected file. Search and file permission errors remain separate from sign-i
 
 Search POSTs one driveItem entity request to /v1.0/search/query. The mapper takes actual drive/item
 references from each hit's resource and parentReference. It never maps the Search hitId into an item
-ID. The service exposes Graph's explicit from/size paging and moreResultsAvailable flag, while
-labeling total hits informational and recall non-exhaustive.
+ID. The service hides Graph's from/size paging behind an opaque next_cursor, offers the next page when
+moreResultsAvailable is true, and labels total hits informational and recall non-exhaustive.
 
-Domain errors are the same in every `lrh-*` connector: `InvalidRequest` (with `DownloadLimitExceeded`: "The file
+Domain error names and wording match in every `lrh-*` connector where they apply: `InvalidRequest` (with `DownloadLimitExceeded`: "The file
 exceeds the connector's N MiB download limit."), `NotFound`, `Throttled`, `Upstream`, `PermissionDenied` (HTTP 403:
-access denied for that account or item, never a sign-in problem; a kind of `Upstream`) and, for writes,
+access denied for that account or item, never a sign-in problem; a kind of `Upstream`) and, in connectors with writes,
 `WriteOutcomeUnknown`, besides `AuthenticationRequired` and `AccountMismatch` from the shared sign-in.
 
 Metadata GETs /drives/{drive-id}/items/{item-id} with a bounded property selection. Download GETs the
@@ -74,8 +74,8 @@ terms, names, identifiers or tokens. The shared sign-in library logs through the
 
 ## 6. MCP tools
 
-The stdio server exposes exactly these three tools. Authentication and status are CLI commands,
-not MCP tools.
+The stdio server exposes exactly these four tools. Sign-in is a CLI command (`auth`); `auth_status`
+reports the same status offline, and `status` is its CLI counterpart.
 
 ### 6.1 Search and inspect
 
@@ -153,7 +153,7 @@ Default Windows output:
 %USERPROFILE%/.lrh-sharepoint-connector/downloads/<account-fingerprint>/
 ~~~
 
-Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads remain on disk for the user to
-manage; uninstalling the connector does not delete them. They are separated by the account
+Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads are removed after seven days, as above;
+uninstalling the connector does not delete them. They are separated by the account
 fingerprint so a later shared-account switch does not return earlier downloads as current-account
 data.

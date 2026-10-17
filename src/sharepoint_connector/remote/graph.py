@@ -31,6 +31,7 @@ from sharepoint_connector.domain.models import FileMetadata, RemoteSearchPage, S
 RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
 MAX_ATTEMPTS = 3
 MAX_JSON_BYTES = 8 * 1024 * 1024
+MAX_ERROR_BYTES = 64 * 1024
 MAX_ERROR_TEXT = 120
 REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 PREAUTH_HOST_SUFFIXES = ("sharepoint.com", "sharepoint-df.com", "1drv.com")
@@ -177,8 +178,8 @@ class Graph:
                 if response is None:
                     raise AssertionError("Download response was closed before content streaming.")
                 if response.status_code != 200:
-                    await response.aread()
-                    error = _graph_error(response)
+                    raw, _ = await _read_body(response, MAX_ERROR_BYTES)
+                    error = _graph_error(response.status_code, raw)
                     await response.aclose()
                     response = None
                     _raise_status(error[0], error[1])
@@ -222,7 +223,7 @@ class Graph:
             )
             try:
                 async with self._limit:
-                    response = await self._client.send(request)
+                    response = await self._client.send(request, stream=True)
             except httpx.RequestError as exc:
                 if attempt + 1 < MAX_ATTEMPTS:
                     await self._sleep(float(attempt + 1))
@@ -233,19 +234,20 @@ class Graph:
                 await response.aclose()
                 await self._sleep(delay)
                 continue
-            if response.status_code < 200 or response.status_code >= 300:
-                error = _graph_error(response)
-                await response.aclose()
-                _raise_status(error[0], error[1])
-            if len(response.content) > MAX_JSON_BYTES:
-                await response.aclose()
-                raise Upstream("Microsoft Graph returned an oversized JSON response.")
             try:
-                payload = response.json()
-            except json.JSONDecodeError as exc:
+                if response.status_code < 200 or response.status_code >= 300:
+                    raw, _ = await _read_body(response, MAX_ERROR_BYTES)
+                    status, code = _graph_error(response.status_code, raw)
+                    _raise_status(status, code)
+                raw, complete = await _read_body(response, MAX_JSON_BYTES)
+                if not complete:
+                    raise Upstream("Microsoft Graph returned an oversized JSON response.")
+            finally:
                 await response.aclose()
+            try:
+                payload = json.loads(raw)
+            except ValueError as exc:
                 raise Upstream("Microsoft Graph returned invalid JSON.") from exc
-            await response.aclose()
             if not isinstance(payload, dict):
                 raise Upstream("Microsoft Graph returned an unexpected JSON shape.")
             # A sign-in can replace the shared cache while Graph is servicing this request.
@@ -278,8 +280,8 @@ class Graph:
             response = await self._send(self._client.build_request("GET", current))
             if response.status_code not in REDIRECT_STATUSES:
                 if response.status_code < 200 or response.status_code >= 300:
-                    await response.aread()
-                    error = _graph_error(response)
+                    raw, _ = await _read_body(response, MAX_ERROR_BYTES)
+                    error = _graph_error(response.status_code, raw)
                     await response.aclose()
                     _raise_status(error[0], error[1])
                 return response
@@ -369,16 +371,28 @@ def _validate_preauthenticated_url(value: str) -> str:
     return value
 
 
-def _graph_error(response: httpx.Response) -> tuple[int, str | None]:
+def _graph_error(status: int, body: bytes) -> tuple[int, str | None]:
     code = None
     try:
-        data = response.json()
-        error = data.get("error") if isinstance(data, dict) else None
-        if isinstance(error, dict) and isinstance(error.get("code"), str):
-            code = error["code"][:MAX_ERROR_TEXT]
-    except (json.JSONDecodeError, ValueError):
-        pass
-    return response.status_code, code
+        data = json.loads(body)
+    except ValueError:
+        data = None
+    error = data.get("error") if isinstance(data, dict) else None
+    if isinstance(error, dict) and isinstance(error.get("code"), str):
+        code = error["code"][:MAX_ERROR_TEXT]
+    return status, code
+
+
+async def _read_body(response: httpx.Response, limit: int) -> tuple[bytes, bool]:
+    """The response body, read in chunks and stopped once it passes ``limit`` bytes. The flag says
+    whether the body was read to its end; a caller that needs all of it refuses the response otherwise."""
+    body = bytearray()
+    async for chunk in response.aiter_bytes():
+        if len(body) + len(chunk) > limit:
+            body.extend(chunk[: limit - len(body)])
+            return bytes(body), False
+        body.extend(chunk)
+    return bytes(body), True
 
 
 def _raise_status(status: int, code: str | None) -> NoReturn:

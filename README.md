@@ -28,7 +28,8 @@ Run the `auth` command above and it logs you in. All `lrh-*` Microsoft 365 conne
 `status` shows the signed-in account and its cached profiles without touching the network. To switch accounts, run `auth --sign-out`, then `auth` again. Which profile serves which tool is in [architecture](docs/architecture.md#2-authentication-and-account-binding).
 
 > Credentials are entered only on Microsoft's sign-in page. Tokens stay in the shared encrypted cache
-> (`~/.lrh-m365-auth`, or `M365_AUTH_HOME`). If encryption is unavailable, sign-in fails closed.
+> (`%USERPROFILE%/.lrh-m365-auth` on Windows, the XDG data folder elsewhere, or `M365_AUTH_HOME`).
+> If encryption is unavailable, sign-in fails closed.
 
 Downloaded files are stored under `%USERPROFILE%/.lrh-sharepoint-connector/downloads/<account-fingerprint>/`
 on Windows, and removed after seven days the next time a file is downloaded. Set
@@ -120,7 +121,7 @@ uv run pytest
 `lrh-m365-auth` follows its `main` branch, and `uv.lock` records the exact commit. Run
 `uv lock --upgrade-package lrh-m365-auth` to move to its latest commit.
 
-Logs: each `mcp` process writes a daily-rotated file under `<data directory>/logs/`, kept for seven days. Set `SHAREPOINT_CONNECTOR_LOG_LEVEL=DEBUG` for request timings ([architecture](docs/architecture.md#5-logging)).
+Logs: each `mcp` process writes a daily-rotated file under `<data directory>/logs/`, kept for seven days. Each tool call logs its name, duration and outcome; `SHAREPOINT_CONNECTOR_LOG_LEVEL` sets the level ([architecture](docs/architecture.md#5-logging)).
 
 Project references: [documentation index](docs/README.md) · [requirements](docs/requirements.md) · [architecture](docs/architecture.md) · [Graph API research](docs/api-research.md) · [roadmap](docs/roadmap.md).
 

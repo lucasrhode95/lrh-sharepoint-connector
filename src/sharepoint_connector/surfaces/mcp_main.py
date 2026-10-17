@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import functools
+import logging
+import time
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 from m365_auth import status_report
@@ -12,7 +16,11 @@ from pydantic import Field
 from sharepoint_connector.bootstrap import AppContext
 from sharepoint_connector.domain.models import FileMetadata, SavedFile, SearchPage
 
-READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=True)
+log = logging.getLogger(__name__)
+
+READ_ONLY = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False
+)
 LOCAL_FILE = ToolAnnotations(
     readOnlyHint=True, destructiveHint=False, idempotentHint=False, openWorldHint=False
 )
@@ -43,6 +51,7 @@ def build_server(context: AppContext) -> FastMCP:
     mcp = FastMCP("lrh-sharepoint-connector", instructions=INSTRUCTIONS, log_level="WARNING")
 
     @mcp.tool(annotations=READ_ONLY)
+    @_logged
     async def search_files(
         query: Annotated[
             str | None,
@@ -71,6 +80,7 @@ def build_server(context: AppContext) -> FastMCP:
         return page.model_dump(mode="json")
 
     @mcp.tool(annotations=READ_ONLY)
+    @_logged
     async def get_file_metadata(
         drive_id: Annotated[str, Field(description="drive_id from a search result.")],
         item_id: Annotated[str, Field(description="item_id from a search result.")],
@@ -80,6 +90,7 @@ def build_server(context: AppContext) -> FastMCP:
         return item.model_dump(mode="json")
 
     @mcp.tool(annotations=LOCAL_FILE)
+    @_logged
     async def download_file(
         drive_id: Annotated[str, Field(description="drive_id from a search result.")],
         item_id: Annotated[str, Field(description="item_id from a search result.")],
@@ -97,6 +108,7 @@ def build_server(context: AppContext) -> FastMCP:
         return saved.model_dump(mode="json")
 
     @mcp.tool(annotations=READ_ONLY)
+    @_logged
     async def auth_status() -> dict[str, object]:
         """Offline status: the signed-in account, each profile's cached credential and token expiry, and the
         sign-in command. Makes no network call; use it before a long task to see whether sign-in is needed."""
@@ -108,3 +120,25 @@ def build_server(context: AppContext) -> FastMCP:
 def serve_mcp(*, context: AppContext | None = None) -> None:
     """Run the stdio server; MCP stdout is reserved for protocol traffic."""
     build_server(context or AppContext()).run("stdio")
+
+
+def _logged[**P, R](function: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+    """Log each tool call's name, duration and outcome. Never its arguments or results."""
+
+    @functools.wraps(function)
+    async def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+        started = time.monotonic()
+        try:
+            result = await function(*args, **kwargs)
+        except Exception as exc:
+            log.warning(
+                "tool %s failed (%s) in %dms",
+                function.__name__,
+                type(exc).__name__,
+                (time.monotonic() - started) * 1000,
+            )
+            raise
+        log.info("tool %s completed in %dms", function.__name__, (time.monotonic() - started) * 1000)
+        return result
+
+    return wrapped
