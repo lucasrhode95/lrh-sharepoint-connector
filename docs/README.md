@@ -5,7 +5,7 @@
 | [Architecture](architecture.md) | How the connector is built: layers, sign-in, the Graph adapter, and the reference for every MCP tool |
 | [Requirements](requirements.md) | What the connector must do, and the decisions behind it |
 | [Roadmap](roadmap.md) | Open implementation and live verification |
-| [API research](api-research.md) | Dated evidence of what Microsoft Graph file search and retrieval allow |
+| [API research](api-research.md) | Dated live findings and private browser routes Microsoft does not document |
 
 Diagram: [architecture](diagrams/architecture.svg).
 
