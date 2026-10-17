@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import time
+
 import httpx
 import pytest
 
@@ -83,3 +86,17 @@ async def test_duplicate_downloads_use_exclusive_names(tmp_path) -> None:
     assert first.filename == "sample.txt"
     assert second.filename == "sample (1).txt"
     assert first.path.read_bytes() == second.path.read_bytes() == b"data"
+
+
+@pytest.mark.asyncio
+async def test_downloads_older_than_a_week_are_removed_on_the_next_download(tmp_path) -> None:
+    files = Files(FakeRepository(), output_home=tmp_path)
+    old = (await files.download_file("drive", "item")).path
+    week_and_a_day_ago = time.time() - 8 * 24 * 3600
+    os.utime(old, (week_and_a_day_ago, week_and_a_day_ago))
+
+    fresh = await files.download_file("drive", "item")
+
+    # The expired file is gone, so the new download takes the plain name instead of "sample (1).txt".
+    assert fresh.filename == "sample.txt"
+    assert [path.name for path in fresh.path.parent.iterdir()] == ["sample.txt"]

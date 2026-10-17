@@ -31,7 +31,8 @@ Run the `auth` command above and it logs you in. All `lrh-*` Microsoft 365 conne
 > (`~/.lrh-m365-auth`, or `M365_AUTH_HOME`). If encryption is unavailable, sign-in fails closed.
 
 Downloaded files are stored under `%LOCALAPPDATA%\lrh-sharepoint-connector\downloads\<account-fingerprint>\`
-on Windows. Set `SHAREPOINT_CONNECTOR_HOME` to override the data root.
+on Windows, and removed after seven days the next time a file is downloaded. Set
+`SHAREPOINT_CONNECTOR_HOME` to override the data root.
 
 ### Configure a local MCP client
 

@@ -12,6 +12,7 @@ from sharepoint_connector import config
 from sharepoint_connector.domain.errors import DownloadLimitExceeded, InvalidRequest
 from sharepoint_connector.domain.models import FileMetadata, SavedFile, SearchPage
 from sharepoint_connector.remote.ports import FileRepository
+from sharepoint_connector.service import localfiles
 
 _SCOPE_QUERY_OPERATOR = re.compile(r'\b(?:AND|OR|NOT)\b|["():*]', re.IGNORECASE)
 _BAD_FILENAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
@@ -78,7 +79,6 @@ class Files:
         if metadata.size_bytes is not None and metadata.size_bytes > max_bytes:
             raise DownloadLimitExceeded(max_bytes)
         output_dir = self._download_directory()
-        output_dir.mkdir(parents=True, exist_ok=True)
         path, file = _create_exclusive(output_dir, _safe_filename(metadata.name))
         try:
             content_type, size = await self._repository.download_drive_item(
@@ -92,8 +92,10 @@ class Files:
             raise
 
     def _download_directory(self) -> Path:
-        base = self._output_home if self._output_home is not None else config.data_dir()
-        return base / "downloads" / self._account_fingerprint
+        """This account's download folder; downloads older than a week are removed when it is next used."""
+        folder = localfiles.kept_dir("downloads", root=self._output_home) / self._account_fingerprint
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder
 
 
 def _validate_query(query: str) -> str:
