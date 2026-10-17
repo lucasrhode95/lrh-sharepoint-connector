@@ -42,7 +42,7 @@ async def test_mcp_exposes_only_read_only_file_tools_and_uses_service_contract(t
     assert all(tool.annotations and not tool.annotations.destructiveHint for tool in tools.values())
     assert "does not fetch file bytes" in (server.instructions or "")
 
-    page = await _call(server, "search_files", query="needle", offset=0, page_size=25)
+    page = await _call(server, "search_files", query="needle", page_size=25)
     assert page["query"] == "needle"
     assert page["hits"][0]["drive_id"] == "drive-id"
     assert page["hits"][0]["item_id"] == "item-id"

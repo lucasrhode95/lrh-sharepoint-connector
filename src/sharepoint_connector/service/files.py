@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import json
 import os
 import re
 from pathlib import Path
@@ -35,12 +37,23 @@ class Files:
 
     async def search_files(
         self,
-        query: str,
+        query: str | None = None,
         *,
-        offset: int = 0,
-        page_size: int = config.DEFAULT_PAGE_SIZE,
         scope_url: str | None = None,
+        page_size: int | None = None,
+        cursor: str | None = None,
     ) -> SearchPage:
+        """Entry point: one page of results. Pass a query (with an optional scope and page size), or pass only
+        the ``next_cursor`` of an earlier page, which carries the query, scope, page size and position."""
+        if cursor is not None:
+            if query is not None or scope_url is not None or page_size is not None:
+                raise InvalidRequest("Pass only the cursor: it already holds the query, scope and page size.")
+            query, scope_url, page_size, offset = _decode_cursor(cursor)
+        else:
+            if query is None:
+                raise InvalidRequest("Pass a query, or only the next_cursor of an earlier search.")
+            offset = 0
+            page_size = config.DEFAULT_PAGE_SIZE if page_size is None else page_size
         query = _validate_query(query)
         offset = _validate_integer("offset", offset, 0, config.MAX_OFFSET)
         page_size = _validate_integer("page_size", page_size, 1, config.MAX_PAGE_SIZE)
@@ -53,10 +66,20 @@ class Files:
                     "constraint cannot be widened."
                 )
             query_string = f'{query} AND path:"{normalized_scope}"'
-        page = await self._repository.search_drive_items(query_string, offset=offset, page_size=page_size)
-        page.query = query
-        page.scope_url = normalized_scope
-        return page
+        remote = await self._repository.search_drive_items(query_string, offset=offset, page_size=page_size)
+        next_cursor = None
+        if remote.next_offset is not None:
+            next_cursor = _encode_cursor(query, normalized_scope, page_size, remote.next_offset)
+        return SearchPage(
+            query=query,
+            scope_url=normalized_scope,
+            page_size=page_size,
+            total_hits=remote.total_hits,
+            more_results_available=remote.more_results_available,
+            next_cursor=next_cursor,
+            hits=remote.hits,
+            coverage_note=remote.coverage_note,
+        )
 
     async def get_file_metadata(self, drive_id: str, item_id: str) -> FileMetadata:
         drive_id = _validate_reference(drive_id, "drive_id")
@@ -96,6 +119,36 @@ class Files:
         folder = localfiles.kept_dir("downloads", root=self._output_home) / self._account_fingerprint
         folder.mkdir(parents=True, exist_ok=True)
         return folder
+
+
+def _encode_cursor(query: str, scope: str | None, page_size: int, offset: int) -> str:
+    """The position of the next page, as opaque text. It is not a credential: the query and scope are
+    validated again when it is used, so a changed cursor can only ask for something the caller could ask."""
+    payload = json.dumps({"q": query, "s": scope, "n": page_size, "o": offset}, separators=(",", ":"))
+    return base64.urlsafe_b64encode(payload.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def _decode_cursor(cursor: str) -> tuple[str, str | None, int, int]:
+    """Read a cursor from an earlier page. Only its shape is checked here; the search validates each value."""
+    if len(cursor) > config.MAX_CURSOR_CHARS:
+        raise _bad_cursor()
+    try:
+        data = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
+        query, scope, page_size, offset = data["q"], data["s"], data["n"], data["o"]
+    except (ValueError, KeyError, TypeError):
+        raise _bad_cursor() from None
+    if not isinstance(query, str) or not (scope is None or isinstance(scope, str)):
+        raise _bad_cursor()
+    for number in (page_size, offset):
+        if not isinstance(number, int) or isinstance(number, bool):
+            raise _bad_cursor()
+    return query, scope, page_size, offset
+
+
+def _bad_cursor() -> InvalidRequest:
+    return InvalidRequest(
+        "The cursor is not valid. Pass the next_cursor of an earlier search result, unchanged."
+    )
 
 
 def _validate_query(query: str) -> str:

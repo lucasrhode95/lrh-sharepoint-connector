@@ -42,8 +42,9 @@ mutation, delete, rename, move or organization-wide access claim.
 - Search uses Microsoft Graph POST /v1.0/search/query with entityTypes driveItem.
 - The resource object's parentReference.driveId and resource.id are the hydration references.
   Microsoft Search hitId is not interchangeable with a driveItem ID.
-- Page size defaults to 25 and is capped at 200. Offset is explicit. Graph's moreResultsAvailable
-  controls whether a next offset is offered; a total is informational.
+- Page size defaults to 25 and is capped at 200. Paging uses an opaque `next_cursor` that carries the query,
+  scope, page size and position; the offset stays internal. Graph's moreResultsAvailable controls whether a
+  next cursor is offered; a total is informational.
 - Graph results are relevance ranked, constrained by the active user's access, and can lag file
   changes. The connector makes no exhaustive recall or immediate-indexing promise.
 - Optional path scope is encoded into the query and must not silently fall back to an unscoped

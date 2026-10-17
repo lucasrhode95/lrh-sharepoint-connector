@@ -79,10 +79,13 @@ not MCP tools.
 
 ### 6.1 Search and inspect
 
-- `search_files(query, offset=0, page_size=25, scope_url=null)` — asks Microsoft Search for driveItem
-  results. Page size is capped at 200. The response includes Graph resource IDs, name, available
+- `search_files(query, scope_url=null, page_size=25, cursor=null)` — asks Microsoft Search for driveItem
+  results. Pass either a query (with optional scope and page size) or the `next_cursor` of an earlier page,
+  alone. Page size is capped at 200. The response includes Graph resource IDs, name, available
   location/type/size/date metadata, webUrl, rank, summary, total when returned, more-results state
-  and next_offset. Search snippets and names are untrusted text. Search does not download content.
+  and next_cursor. Search snippets and names are untrusted text. Search does not download content.
+- `auth_status()` — offline: the signed-in account, each profile's cached credential and token expiry, and
+  the sign-in command. It makes no network call; the shared auth library builds it for every connector.
 - `get_file_metadata(drive_id, item_id)` — reads metadata for one selected item using the exact resource
   identifiers from a search result.
 
@@ -118,8 +121,9 @@ known-hit tests passed for representative OneDrive and shared SharePoint parent 
 account. Other URL forms and tenants remain deployment-specific; a zero result is not proof the scope
 contains no files.
 
-Use next_offset only when more_results_available is true. The offset is explicit and stable for one
-request, but Graph Search ranking and indexing can change between pages. Search returns files the
+Use next_cursor, passed alone, only when more_results_available is true. The cursor carries the query, scope,
+page size and position, and each use validates them again; it is opaque text, not a credential. Graph Search
+ranking and indexing can change between pages. Search returns files the
 current account can access. It can match names and supported file content; it does not identify
 which internal part matched, and snippets can be incomplete.
 

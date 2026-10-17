@@ -25,7 +25,8 @@ the email or message relationship to this connector.
 
 - search_files returns relevance-ranked results from files the signed-in account can read. Search
   may match names or supported file content, but coverage is not exhaustive. Search returns snippets
-  and metadata only; it does not fetch file bytes. Use next_offset when more_results_available is true.
+  and metadata only; it does not fetch file bytes. When more_results_available is true, pass next_cursor
+  alone to get the next page.
 - Results expose resource drive_id and item_id when Graph returns them. These are the exact
   driveItem references for get_file_metadata and download_file; do not use a Microsoft Search hit id.
 - scope_url applies a SharePoint/OneDrive path constraint. Scoped queries accept plain terms only.
@@ -44,22 +45,28 @@ def build_server(context: AppContext) -> FastMCP:
     @mcp.tool(annotations=READ_ONLY)
     async def search_files(
         query: Annotated[
-            str, Field(description="Terms to search in accessible OneDrive and SharePoint files.")
-        ],
-        offset: Annotated[
-            int, Field(ge=0, description="Graph Search offset; use next_offset for the next page.")
-        ] = 0,
-        page_size: Annotated[
-            int, Field(ge=1, le=200, description="Number of results to ask Graph Search for, up to 200.")
-        ] = 25,
+            str | None,
+            Field(
+                description="Terms to search in accessible OneDrive and SharePoint files; omit with cursor."
+            ),
+        ] = None,
         scope_url: Annotated[
             str | None,
             Field(description="Optional SharePoint/OneDrive site, library or folder URL scope."),
         ] = None,
+        page_size: Annotated[
+            int | None,
+            Field(ge=1, le=200, description="Results per page, up to 200 (default 25). Only with a query."),
+        ] = None,
+        cursor: Annotated[
+            str | None,
+            Field(description="next_cursor from an earlier result. Pass it alone to get the next page."),
+        ] = None,
     ) -> dict[str, Any]:
-        """Search without downloading content; returns resource IDs, provenance, rank and snippets."""
+        """Search without downloading content; returns resource IDs, provenance, rank and snippets. Continue
+        with the next_cursor it returns, passed alone."""
         page: SearchPage = await (await context.services()).files.search_files(
-            query, offset=offset, page_size=page_size, scope_url=scope_url
+            query, scope_url=scope_url, page_size=page_size, cursor=cursor
         )
         return page.model_dump(mode="json")
 

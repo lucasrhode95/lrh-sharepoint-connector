@@ -45,16 +45,30 @@ class SearchHit(BaseModel):
         return bool(self.drive_id and self.item_id)
 
 
+class RemoteSearchPage(BaseModel):
+    """One page as Microsoft Search returned it. Internal: the service hands out a cursor, never an offset."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    total_hits: int | None = None
+    more_results_available: bool
+    next_offset: int | None = None
+    hits: list[SearchHit]
+    coverage_note: str = (
+        "Microsoft Search is relevance-ranked and limited to files the signed-in account can read; "
+        "it does not guarantee exhaustive recall."
+    )
+
+
 class SearchPage(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     query: str
     scope_url: str | None = None
-    offset: int
     page_size: int
     total_hits: int | None = None
     more_results_available: bool
-    next_offset: int | None = None
+    next_cursor: str | None = None
     hits: list[SearchHit]
     coverage_note: str = (
         "Microsoft Search is relevance-ranked and limited to files the signed-in account can read; "

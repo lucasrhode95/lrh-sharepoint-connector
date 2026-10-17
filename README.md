@@ -85,7 +85,7 @@ The MCP server exposes the tools below. Sign-in itself (`auth`) is a CLI command
 | MCP tool | Service module | Behavior |
 |---|---|---|
 | `auth_status` | shared auth provider | Offline: the signed-in account, each profile's cached credential and token expiry, and the sign-in command |
-| `search_files` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Search accessible OneDrive and SharePoint files through Microsoft Search, one page at a time |
+| `search_files` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Search accessible OneDrive and SharePoint files through Microsoft Search, one page at a time; pass `next_cursor` alone for the next page |
 | `get_file_metadata` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Read metadata for one selected result |
 | `download_file` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Download one selected file locally (50 MiB by default, 100 MiB at most) |
 

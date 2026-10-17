@@ -4,7 +4,7 @@ from typing import Any
 
 from m365_auth import AccessToken
 
-from sharepoint_connector.domain.models import FileMetadata, SearchHit, SearchPage
+from sharepoint_connector.domain.models import FileMetadata, RemoteSearchPage, SearchHit
 
 
 class FakeAccessToken(AccessToken):
@@ -48,18 +48,17 @@ class FakeRepository:
         )
         self.content = b"data"
         self.fail_download: Exception | None = None
+        self.total_results = 1  # how many results the fake search has; more than one makes pages
 
-    async def search_drive_items(self, query: str, *, offset: int, page_size: int) -> SearchPage:
+    async def search_drive_items(self, query: str, *, offset: int, page_size: int) -> RemoteSearchPage:
         self.query = query
         self.offset = offset
         self.page_size = page_size
-        return SearchPage(
-            query=query,
-            offset=offset,
-            page_size=page_size,
-            total_hits=1,
-            more_results_available=False,
-            next_offset=None,
+        more = offset + page_size < self.total_results
+        return RemoteSearchPage(
+            total_hits=self.total_results,
+            more_results_available=more,
+            next_offset=offset + page_size if more else None,
             hits=[
                 SearchHit(
                     drive_id=self.drive_id,

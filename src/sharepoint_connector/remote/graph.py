@@ -26,7 +26,7 @@ from sharepoint_connector.domain.errors import (
     Throttled,
     Upstream,
 )
-from sharepoint_connector.domain.models import FileMetadata, SearchHit, SearchPage
+from sharepoint_connector.domain.models import FileMetadata, RemoteSearchPage, SearchHit
 
 RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
 MAX_ATTEMPTS = 3
@@ -62,7 +62,7 @@ class Graph:
         if self._owns_client:
             await self._client.aclose()
 
-    async def search_drive_items(self, query: str, *, offset: int, page_size: int) -> SearchPage:
+    async def search_drive_items(self, query: str, *, offset: int, page_size: int) -> RemoteSearchPage:
         payload = await self._json(
             "POST",
             "/search/query",
@@ -121,10 +121,7 @@ class Graph:
                 )
 
         next_offset = offset + page_size if more and offset + page_size <= config.MAX_OFFSET else None
-        return SearchPage(
-            query=query,
-            offset=offset,
-            page_size=page_size,
+        return RemoteSearchPage(
             total_hits=max(totals) if totals else None,
             more_results_available=more,
             next_offset=next_offset,
