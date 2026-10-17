@@ -221,29 +221,33 @@ class Graph:
                 headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
                 json=body,
             )
+            raw = b""
+            retry_delay: float | None = None
             try:
+                # The request limit covers the whole exchange, body included: a streamed body counts too.
                 async with self._limit:
                     response = await self._client.send(request, stream=True)
-            except httpx.RequestError as exc:
+                    try:
+                        if response.status_code in RETRYABLE_STATUSES and attempt + 1 < MAX_ATTEMPTS:
+                            retry_delay = _retry_delay(response)
+                        elif response.status_code < 200 or response.status_code >= 300:
+                            error_body, _ = await _read_body(response, MAX_ERROR_BYTES)
+                            status, code = _graph_error(response.status_code, error_body)
+                            _raise_status(status, code)
+                        else:
+                            raw, complete = await _read_body(response, MAX_JSON_BYTES)
+                            if not complete:
+                                raise Upstream("Microsoft Graph returned an oversized JSON response.")
+                    finally:
+                        await response.aclose()
+            except httpx.RequestError as exc:  # includes a connection that drops while its body is read
                 if attempt + 1 < MAX_ATTEMPTS:
                     await self._sleep(float(attempt + 1))
                     continue
                 raise Upstream("Microsoft Graph could not be reached.") from exc
-            if response.status_code in RETRYABLE_STATUSES and attempt + 1 < MAX_ATTEMPTS:
-                delay = _retry_delay(response)
-                await response.aclose()
-                await self._sleep(delay)
+            if retry_delay is not None:
+                await self._sleep(retry_delay)
                 continue
-            try:
-                if response.status_code < 200 or response.status_code >= 300:
-                    raw, _ = await _read_body(response, MAX_ERROR_BYTES)
-                    status, code = _graph_error(response.status_code, raw)
-                    _raise_status(status, code)
-                raw, complete = await _read_body(response, MAX_JSON_BYTES)
-                if not complete:
-                    raise Upstream("Microsoft Graph returned an oversized JSON response.")
-            finally:
-                await response.aclose()
             try:
                 payload = json.loads(raw)
             except ValueError as exc:

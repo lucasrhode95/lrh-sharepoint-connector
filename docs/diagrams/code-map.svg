@@ -68,7 +68,7 @@
   <text class="card-subtitle" x="80" y="678"><tspan class="code">service/</tspan> · every input is validated here, once</text>
   <rect x="80" y="708" width="900" height="224" fill="#fff" stroke="#c7d5e2" stroke-width="1.5"/>
   <text class="section-title" x="98" y="742"><tspan class="code">Files</tspan><tspan class="detail" dx="12">files.py</tspan></text>
-  <g><title>Validates the query, offset and page size; an optional scope URL becomes a KQL path: constraint that is never dropped. → FileRepository.search_drive_items</title><text class="detail" x="98" y="780">• <tspan class="code">search_files(query, offset, page_size, scope_url)</tspan></text></g>
+  <g><title>Validates the query, page size and cursor; an optional scope URL becomes a KQL path: constraint that is never dropped. → FileRepository.search_drive_items</title><text class="detail" x="98" y="780">• <tspan class="code">search_files(query, scope_url, page_size, cursor)</tspan></text></g>
   <g><title>Validates the drive and item references from a search result. → FileRepository.get_drive_item</title><text class="detail" x="98" y="814">• <tspan class="code">get_file_metadata(drive_id, item_id)</tspan></text></g>
   <g><title>Refuses folders and files over the limit, claims an exclusive local name in the account's download folder, and removes a partial file on failure. → FileRepository.download_drive_item</title><text class="detail" x="98" y="848">• <tspan class="code">download_file(drive_id, item_id, max_bytes)</tspan></text></g>
   <text class="muted" x="98" y="908">uses <tspan class="code">FileRepository</tspan> · <tspan class="code">localfiles</tspan></text>

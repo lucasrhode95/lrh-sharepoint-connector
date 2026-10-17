@@ -18,11 +18,13 @@ from sharepoint_connector.domain.models import FileMetadata, SavedFile, SearchPa
 
 log = logging.getLogger(__name__)
 
-READ_ONLY = ToolAnnotations(
+READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=True)
+# Offline: reads nothing from Microsoft 365 and changes nothing.
+OFFLINE_READ = ToolAnnotations(
     readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False
 )
 LOCAL_FILE = ToolAnnotations(
-    readOnlyHint=True, destructiveHint=False, idempotentHint=False, openWorldHint=False
+    readOnlyHint=True, destructiveHint=False, idempotentHint=False, openWorldHint=True
 )
 
 INSTRUCTIONS = """\
@@ -107,7 +109,7 @@ def build_server(context: AppContext) -> FastMCP:
         )
         return saved.model_dump(mode="json")
 
-    @mcp.tool(annotations=READ_ONLY)
+    @mcp.tool(annotations=OFFLINE_READ)
     @_logged
     async def auth_status() -> dict[str, object]:
         """Offline status: the signed-in account, each profile's cached credential and token expiry, and the
