@@ -132,12 +132,10 @@ path. Do not infer that arbitrary sharing URLs, guest resources or other tenants
 No file, sharing permission or mailbox was changed; credentials and private results were not
 retained in Git.
 
-**Related evidence:** the Teams roadmap records successful Graph OneDrive reads and
-`driveItem` search on 2026-10-01 (`lrh-teams-connector/docs/roadmap.md`, G1).
-This is evidence from that repo, not a repeated Teams sign-in test. Its heterogeneous private
-Substrate Search v2 discovery remains pending; Graph results do not validate that contract.
-Product scope and implementation decisions for general OneDrive/SharePoint files belong in the
-[SharePoint connector roadmap](https://github.com/lucasrhode95/lrh-sharepoint-connector/blob/main/docs/roadmap.md).
+**Related evidence:** the Teams connector recorded successful Graph OneDrive reads and
+`driveItem` search with its own Graph profile on 2026-10-01. That is evidence from that repository,
+not a repeated sign-in test here. Product scope for general OneDrive/SharePoint files is in the
+[requirements](requirements.md).
 
 ## Microsoft 365 Search API coverage review (2026-10-10)
 
@@ -157,7 +155,7 @@ Microsoft Search in Graph uses `POST /v1.0/search/query`; `requests[].entityType
 
 **Other file route, narrower scope.** Microsoft also documents DriveItem search routes such as `GET /me/drive/root/search(q='...')` for a drive hierarchy and `GET /me/drive/search(q='...')` to search more broadly for items accessible to the user. These are separate GET routes from Microsoft Search `POST /search/query`; they are useful when an explicitly drive-scoped search is desired, but were not benchmarked here.
 
-**Implementation and validation status (2026-10-12).** The separate read-only SharePoint connector now implements `driveItem` search, explicit offset paging, returned drive/item identity mapping, selected metadata hydration, and bounded user-selected downloads. Live checks covered filename-only and content-only hits in personal OneDrive and a shared SharePoint library, selected-item metadata/download, a negative marker, and two distinct result pages. This does not establish exhaustive recall or minimum permissions: the account's existing file/site grants exceed the connector's requested Graph scopes. The connector's deployment-specific results and remaining limits are in the [SharePoint roadmap](https://github.com/lucasrhode95/lrh-sharepoint-connector/blob/main/docs/roadmap.md). Microsoft documents up to 1,000 file results per page and recommends smaller pages for latency; no indexing-time guarantee was found. Keep downloads user-selected rather than fetching a corpus during search.
+**Implementation and validation status (2026-10-12).** The separate read-only SharePoint connector now implements `driveItem` search, explicit offset paging, returned drive/item identity mapping, selected metadata hydration, and bounded user-selected downloads. Live checks covered filename-only and content-only hits in personal OneDrive and a shared SharePoint library, selected-item metadata/download, a negative marker, and two distinct result pages. This does not establish exhaustive recall or minimum permissions: the account's existing file/site grants exceed the connector's requested Graph scopes. The deployment-specific results are in the live verification log above; the open checks are in the [roadmap](roadmap.md). Microsoft documents up to 1,000 file results per page and recommends smaller pages for latency; no indexing-time guarantee was found. Keep downloads user-selected rather than fetching a corpus during search.
 
 ## Microsoft 365 search capture and source route map: SharePoint and OneDrive (2026-10-10)
 
@@ -252,7 +250,7 @@ Moved from the Outlook connector's former cross-product index (`m365-search-find
 
 **Graph link:** the file search here uses Graph Search API `driveItem`; see the Graph table below for the shared request family and its differences from mail and Teams search.
 
-SharePoint/OneDrive file search was investigated separately from Outlook mail and Teams global search. The observed Graph route was `POST /v1.0/search/query` with `entityTypes: ["driveItem"]`; synthetic filename-only and content-only queries returned hits. The read-only SharePoint connector now uses this route, preserves returned drive/item identity, hydrates selected metadata, and supports bounded downloads. Live checks found synthetic known items in personal OneDrive and a shared SharePoint library, hydrated their metadata, downloaded matching bytes, and returned distinct pages for explicit offsets. The account's permissions exceed the connector's requested Graph scopes, so minimum permissions and exhaustive recall remain unverified; see the [SharePoint roadmap](https://github.com/lucasrhode95/lrh-sharepoint-connector/blob/main/docs/roadmap.md).
+SharePoint/OneDrive file search was investigated separately from Outlook mail and Teams global search. The observed Graph route was `POST /v1.0/search/query` with `entityTypes: ["driveItem"]`; synthetic filename-only and content-only queries returned hits. The read-only SharePoint connector now uses this route, preserves returned drive/item identity, hydrates selected metadata, and supports bounded downloads. Live checks found synthetic known items in personal OneDrive and a shared SharePoint library, hydrated their metadata, downloaded matching bytes, and returned distinct pages for explicit offsets. The account's permissions exceed the connector's requested Graph scopes, so minimum permissions remain unverified, and recall is not exhaustive by design ([requirements](requirements.md#search-contracts)). The open checks are in the [roadmap](roadmap.md).
 
 The web routes now resolve by surface. The OneDrive Files flow submitted Substrate `POST /search/api/v2/query` for `File` and also used the SharePoint REST proxy `POST /_api/sp.searchresultitemcollection.getsearchresultsasstream`; SharePoint list-stream calls loaded list content. The company SharePoint search page submitted `POST /searchservice/api/v2/query` for `File` and `People`, with `GET /search/api/v1/suggestions` for suggestions and separate init/configuration calls. The response envelope carried Search result sets, but these private routes are distinct from Graph `driveItem` search. See the [route map above](#microsoft-365-search-capture-and-source-route-map-sharepoint-and-onedrive-2026-10-10) for counts and route details.
 

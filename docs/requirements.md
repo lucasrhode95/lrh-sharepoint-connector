@@ -21,8 +21,8 @@ artifacts remain Teams-owned.
 5. Expose the service through one stdio MCP surface.
 
 Search never downloads file bodies. There is no local content index, background crawler, scheduler,
-browser UI, upload, sharing change, permission mutation, delete, rename, move or organization-wide
-access claim.
+browser UI, remote MCP endpoint, text extraction from file formats, upload, sharing change, permission
+mutation, delete, rename, move or organization-wide access claim.
 
 ## Search contracts
 
