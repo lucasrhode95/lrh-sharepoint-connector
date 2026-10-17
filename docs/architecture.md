@@ -139,7 +139,8 @@ file type, size, dates and parent path when Graph returns them.
 Downloads land in `<data directory>/downloads/<account fingerprint>/`. Files older than seven days,
 in any account's folder, are removed when the next download uses the folder
 ([`service/localfiles.py`](../src/sharepoint_connector/service/localfiles.py), the same module as in the
-Outlook and Teams connectors).
+Outlook and Teams connectors). One process cleans at a time, by a lock file beside the folder; a process
+that finds it held skips its cleanup.
 
 Downloads use GET /drives/{drive-id}/items/{item-id}/content. The connector streams bytes to the
 local downloads directory, checks the configured maximum while receiving, rejects unsafe redirect

@@ -65,7 +65,7 @@ async def test_unsafe_download_redirect_is_rejected_and_partial_file_removed(tmp
         files = Files(Graph(FakeTokens(), client=client))
         with pytest.raises(Upstream, match="trusted"):
             await files.download_file("drive-id", "item-id")
-    assert all(not path.is_file() for path in tmp_path.rglob("*"))
+    assert all(not path.is_file() for path in (tmp_path / "downloads").rglob("*"))
 
 
 @pytest.mark.asyncio
@@ -81,7 +81,7 @@ async def test_oversized_stream_is_removed_after_limit_error(tmp_path) -> None:
         files = Files(Graph(FakeTokens(), client=client))
         with pytest.raises(DownloadLimitExceeded):
             await files.download_file("drive-id", "item-id", max_bytes=4)
-    assert all(not path.is_file() for path in tmp_path.rglob("*"))
+    assert all(not path.is_file() for path in (tmp_path / "downloads").rglob("*"))
 
 
 @pytest.mark.asyncio
