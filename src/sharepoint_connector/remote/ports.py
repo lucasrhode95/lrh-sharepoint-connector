@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import BinaryIO, Protocol
 
-from sharepoint_connector.domain.models import FileMetadata, SearchPage
+from sharepoint_connector.domain.models import FileMetadata, RemoteSearchPage
 
 
 class FileRepository(Protocol):
-    async def search_drive_items(self, query: str, *, offset: int, page_size: int) -> SearchPage: ...
+    async def search_drive_items(self, query: str, *, offset: int, page_size: int) -> RemoteSearchPage: ...
 
     async def get_drive_item(self, drive_id: str, item_id: str) -> FileMetadata: ...
 

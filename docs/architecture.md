@@ -1,6 +1,6 @@
 # Architecture
 
-## Layers
+## 1. Layers
 
 This is a single-user local application with one user-facing surface, the MCP server.
 
@@ -17,7 +17,7 @@ service decisions and remote APIs. There is no browser UI, SQLite store, search 
 task. The only durable output is a file explicitly selected by the user for download, isolated into
 a folder keyed by the active account fingerprint.
 
-## Authentication and account binding
+## 2. Authentication and account binding
 
 The connector uses lrh-m365-auth and the outlook.graph profile. It creates no duplicate MSAL client
 or token cache. Every public service context lookup obtains a current token, checks stable
@@ -32,12 +32,17 @@ message discovery; this connector does not use it, and it grants no SharePoint f
 A cached credential indicates only that OAuth state exists. Graph can still deny Search, metadata or
 one selected file. Search and file permission errors remain separate from sign-in readiness.
 
-## Graph adapter
+## 3. Graph adapter
 
 Search POSTs one driveItem entity request to /v1.0/search/query. The mapper takes actual drive/item
 references from each hit's resource and parentReference. It never maps the Search hitId into an item
-ID. The service exposes Graph's explicit from/size paging and moreResultsAvailable flag, while
-labeling total hits informational and recall non-exhaustive.
+ID. The service hides Graph's from/size paging behind an opaque next_cursor, offers the next page when
+moreResultsAvailable is true, and labels total hits informational and recall non-exhaustive.
+
+Domain error names and wording match in every `lrh-*` connector where they apply: `InvalidRequest` (with `DownloadLimitExceeded`: "The file
+exceeds the connector's N MiB download limit."), `NotFound`, `Throttled`, `Upstream`, `PermissionDenied` (HTTP 403:
+access denied for that account or item, never a sign-in problem; a kind of `Upstream`) and, in connectors with writes,
+`WriteOutcomeUnknown`, besides `AuthenticationRequired` and `AccountMismatch` from the shared sign-in.
 
 Metadata GETs /drives/{drive-id}/items/{item-id} with a bounded property selection. Download GETs the
 same item's /content route. Graph's 302 target is checked against a narrow HTTPS host suffix
@@ -48,7 +53,7 @@ The adapter retries read requests a bounded number of times for throttling and t
 errors, respecting numeric or date-form Retry-After values up to 30 seconds. Search POST is a
 read-only operation and is safe to retry. No Graph write adapter exists.
 
-## CLI and shared service boundary
+## 4. CLI and shared service boundary
 
 The CLI exposes auth, status and mcp commands. Authentication is explicit; starting the MCP process
 does not launch a login flow. MCP tools call the same Files service methods as each other, keeping
@@ -57,21 +62,34 @@ credential from a resource-specific Graph access-token expiry; `status --check` 
 acquisition, not file-operation permission. Local downloads are the only product data retained by
 this connector.
 
-## MCP tools
+## 5. Logging
 
-The stdio server exposes exactly these three tools. Authentication and status are CLI commands,
-not MCP tools.
+Each `mcp` process writes its own file, `<data directory>/logs/<command>-<start time>-<process id>.log`,
+rotated at midnight and kept seven days ([`logs.py`](../src/sharepoint_connector/logs.py), the same module in every
+`lrh-*` connector). The MCP server logs to its file only, since stdout carries the protocol. A filter
+redacts bearer tokens, credential headers, assigned secrets and secret query parameters; `httpx` and
+`httpcore`, which log full request URLs, are held at WARNING. `SHAREPOINT_CONNECTOR_LOG_LEVEL` sets the level (default
+INFO). Records carry operational timings, statuses and counts, never message or file content, search
+terms, names, identifiers or tokens. The shared sign-in library logs through the same handlers.
 
-### Search and inspect
+## 6. MCP tools
 
-- `search_files(query, offset=0, page_size=25, scope_url=null)` — asks Microsoft Search for driveItem
-  results. Page size is capped at 200. The response includes Graph resource IDs, name, available
+The stdio server exposes exactly these four tools. Sign-in is a CLI command (`auth`); `auth_status`
+reports the same status offline, and `status` is its CLI counterpart.
+
+### 6.1 Search and inspect
+
+- `search_files(query, scope_url=null, page_size=25, cursor=null)` — asks Microsoft Search for driveItem
+  results. Pass either a query (with optional scope and page size) or the `next_cursor` of an earlier page,
+  alone. Page size is capped at 200. The response includes Graph resource IDs, name, available
   location/type/size/date metadata, webUrl, rank, summary, total when returned, more-results state
-  and next_offset. Search snippets and names are untrusted text. Search does not download content.
+  and next_cursor. Search snippets and names are untrusted text. Search does not download content.
+- `auth_status()` — offline: the signed-in account, each profile's cached credential and token expiry, and
+  the sign-in command. It makes no network call; the shared auth library builds it for every connector.
 - `get_file_metadata(drive_id, item_id)` — reads metadata for one selected item using the exact resource
   identifiers from a search result.
 
-### Retrieve a file
+### 6.2 Retrieve a file
 
 - `download_file(drive_id, item_id, max_bytes=52428800)` — downloads one selected non-folder file.
   The default is 50 MiB; the hard maximum is 100 MiB. The response gives a local path for the agent
@@ -93,7 +111,7 @@ content-type limits, access rights, query syntax or scope constraints. Do not in
 contains no matching file from one empty result. Microsoft Search does not promise a complete
 organization-wide corpus outside files the signed-in account can access.
 
-### Scope, paging and indexing
+### 6.3 Scope, paging and indexing
 
 The optional scope_url adds a Graph KQL path constraint to the search query. Scoped queries accept
 plain terms only, so a query cannot add KQL operators that broaden the scope. A rejected scoped
@@ -103,19 +121,26 @@ known-hit tests passed for representative OneDrive and shared SharePoint parent 
 account. Other URL forms and tenants remain deployment-specific; a zero result is not proof the scope
 contains no files.
 
-Use next_offset only when more_results_available is true. The offset is explicit and stable for one
-request, but Graph Search ranking and indexing can change between pages. Search returns files the
+Use next_cursor, passed alone, only when more_results_available is true. The cursor carries the query, scope,
+page size and position, and each use validates them again; it is opaque text, not a credential. Graph Search
+ranking and indexing can change between pages. Search returns files the
 current account can access. It can match names and supported file content; it does not identify
 which internal part matched, and snippets can be incomplete.
 
 New or changed files may take time to appear in Microsoft Search. Graph does not provide an
 indexing-completion signal or an exhaustive recall guarantee.
 
-### Metadata and downloads
+### 6.4 Metadata and downloads
 
 Metadata comes from GET /drives/{drive-id}/items/{item-id}; the exact route reference is returned
 from resource.id and resource.parentReference.driveId. Metadata includes the Graph webUrl, name,
 file type, size, dates and parent path when Graph returns them.
+
+Downloads land in `<data directory>/downloads/<account fingerprint>/`. Files older than seven days,
+in any account's folder, are removed when the next download uses the folder
+([`service/localfiles.py`](../src/sharepoint_connector/service/localfiles.py), the same module as in the
+Outlook and Teams connectors). One process cleans at a time, by a lock file beside the folder; a process
+that finds it held skips its cleanup.
 
 Downloads use GET /drives/{drive-id}/items/{item-id}/content. The connector streams bytes to the
 local downloads directory, checks the configured maximum while receiving, rejects unsafe redirect
@@ -126,10 +151,10 @@ the partial file. Existing files are not overwritten; a numeric suffix is added 
 Default Windows output:
 
 ~~~text
-%LOCALAPPDATA%\lrh-sharepoint-connector\downloads\<account-fingerprint>\
+%USERPROFILE%/.lrh-sharepoint-connector/downloads/<account-fingerprint>/
 ~~~
 
-Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads remain on disk for the user to
-manage; uninstalling the connector does not delete them. They are separated by the account
+Override the data root with SHAREPOINT_CONNECTOR_HOME. Downloads are removed after seven days, as above;
+uninstalling the connector does not delete them. They are separated by the account
 fingerprint so a later shared-account switch does not return earlier downloads as current-account
 data.

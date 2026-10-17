@@ -7,10 +7,6 @@ class InvalidRequest(ConnectorError):
     """An input does not satisfy a public service contract."""
 
 
-class PermissionDenied(ConnectorError):
-    """Microsoft Graph denied this operation for the current account or item."""
-
-
 class NotFound(ConnectorError):
     """A selected drive item no longer exists or is not readable."""
 
@@ -24,8 +20,15 @@ class Upstream(ConnectorError):
 
 
 class DownloadLimitExceeded(InvalidRequest):
-    """The selected item exceeds the configured local download limit."""
+    """A download exceeded the connector's local size limit."""
 
     def __init__(self, limit_bytes: int) -> None:
         self.limit_bytes = limit_bytes
-        super().__init__(f"The selected file exceeds the {limit_bytes} byte download limit.")
+        mebibytes, remainder = divmod(limit_bytes, 1024 * 1024)
+        self.limit = f"{mebibytes} MiB" if remainder == 0 else f"{limit_bytes:,} bytes"
+        super().__init__(f"The file exceeds the connector's {self.limit} download limit.")
+
+
+class PermissionDenied(Upstream):
+    """Microsoft denied this operation for the current account or item (HTTP 403); the sign-in itself is
+    fine. A kind of ``Upstream``, so code that tolerates an upstream failure tolerates this too."""

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from pathlib import Path
 
 import httpx
 from m365_auth import Account, AccountBoundTokenSource, AuthenticationRequired, TokenProvider
@@ -26,12 +25,10 @@ class AppContext:
         *,
         tokens: TokenProvider | None = None,
         http_client: httpx.AsyncClient | None = None,
-        output_home: Path | None = None,
     ) -> None:
         self.tokens = tokens or TokenProvider(login_command=f"{config.CLI_NAME} auth")
         self._http_client = http_client
         self._owns_http_client = http_client is None
-        self._output_home = output_home
         self._services: Services | None = None
         self._lock = asyncio.Lock()
 
@@ -73,7 +70,6 @@ class AppContext:
             account=account,
             files=Files(
                 graph,
-                output_home=self._output_home,
                 account_fingerprint=account.fingerprint,
             ),
         )

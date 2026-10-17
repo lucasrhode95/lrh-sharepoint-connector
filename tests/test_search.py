@@ -78,11 +78,10 @@ async def test_scoped_search_adds_path_constraint_and_returns_original_query() -
     page = await Files(repository).search_files(
         "annual report",
         scope_url="https://tenant.sharepoint.com/sites/finance/",
-        offset=10,
         page_size=12,
     )
     assert repository.query == 'annual report AND path:"https://tenant.sharepoint.com/sites/finance"'
-    assert repository.offset == 10
+    assert repository.offset == 0
     assert repository.page_size == 12
     assert page.query == "annual report"
     assert page.scope_url == "https://tenant.sharepoint.com/sites/finance"
@@ -94,8 +93,10 @@ async def test_scoped_search_adds_path_constraint_and_returns_original_query() -
     [
         {"query": ""},
         {"query": "   "},
-        {"query": "x", "offset": True},
-        {"query": "x", "offset": 100_001},
+        {},
+        {"query": "x", "cursor": "not a cursor"},
+        {"cursor": "A" * 3000},
+        {"cursor": "bm90IGpzb24"},
         {"query": "x", "page_size": 201},
         {"query": "x", "scope_url": "https://example.invalid/site"},
         {"query": "x", "scope_url": "https://tenant.sharepoint.com/site?q=wide"},
@@ -110,8 +111,36 @@ async def test_search_rejects_invalid_or_widenable_inputs(kwargs) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_has_no_next_offset_when_graph_says_last_page() -> None:
+async def test_search_has_no_next_cursor_when_graph_says_last_page() -> None:
     repository = FakeRepository()
     page = await Files(repository).search_files("needle")
-    assert page.next_offset is None
+    assert page.next_cursor is None
     assert page.more_results_available is False
+
+
+@pytest.mark.asyncio
+async def test_next_cursor_carries_the_query_scope_and_position_to_the_next_page() -> None:
+    repository = FakeRepository()
+    repository.total_results = 5
+    files = Files(repository)
+    scope = "https://tenant.sharepoint.com/sites/finance"
+
+    first = await files.search_files("annual report", scope_url=scope, page_size=2)
+    second = await files.search_files(cursor=first.next_cursor)
+    last = await files.search_files(cursor=second.next_cursor)
+
+    assert first.next_cursor is not None and second.next_cursor is not None
+    assert (repository.offset, repository.page_size) == (4, 2)
+    assert second.query == "annual report" and second.scope_url == scope
+    assert repository.query == 'annual report AND path:"https://tenant.sharepoint.com/sites/finance"'
+    assert last.more_results_available is False and last.next_cursor is None
+    assert "offset" not in second.model_dump()
+
+
+@pytest.mark.asyncio
+async def test_a_cursor_is_used_alone_and_must_be_one_we_issued() -> None:
+    files = Files(FakeRepository())
+    with pytest.raises(InvalidRequest):
+        await files.search_files("again", cursor="anything")
+    with pytest.raises(InvalidRequest):
+        await files.search_files(cursor="this is not one of ours")

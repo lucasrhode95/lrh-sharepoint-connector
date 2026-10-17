@@ -5,9 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
-from datetime import UTC, datetime
 
-from m365_auth import AuthenticationRequired, TokenProvider
+from m365_auth import AuthenticationRequired, TokenProvider, check_profiles, status_lines
 
 from sharepoint_connector import config
 from sharepoint_connector.domain.errors import ConnectorError
@@ -25,8 +24,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "status":
             return _status(args.check)
         if args.command == "mcp":
+            from sharepoint_connector.logs import configure_app_logging
             from sharepoint_connector.surfaces.mcp_main import serve_mcp
 
+            configure_app_logging("mcp")  # file only: stdout belongs to the MCP protocol from here on
             serve_mcp()
             return EXIT_OK
         raise AssertionError(f"Unknown command: {args.command}")
@@ -59,24 +60,11 @@ def _auth(sign_out: bool) -> int:
 
 def _status(check: bool) -> int:
     provider = TokenProvider(login_command=f"{config.CLI_NAME} auth")
-    status = provider.status()
-    print(f"Shared auth cache: {'present' if status.exists else 'not present'}")
-    for profile in status.profiles:
-        state = "cached" if profile.client_credential_cached else "not cached"
-        expires = (
-            datetime.fromtimestamp(profile.access_token_expires_on, UTC).isoformat(timespec="seconds")
-            if profile.access_token_expires_on
-            else "not cached"
-        )
-        print(f"[{profile.profile}] client credential {state}; access token expires {expires}")
-    if check:
-        try:
-            provider.get_token(config.GRAPH_PROFILE)
-            print(f"[{config.GRAPH_PROFILE}] token acquisition succeeded.")
-        except ConnectorError as exc:
-            print(f"[{config.GRAPH_PROFILE}] token acquisition failed: {exc}", file=sys.stderr)
-            return EXIT_AUTH_REQUIRED
-    return EXIT_OK
+    checks = check_profiles(provider) if check else {}
+    for line in status_lines(provider, checks):
+        print(line)
+    graph = checks.get(config.GRAPH_PROFILE)
+    return EXIT_AUTH_REQUIRED if graph is not None and not graph["ok"] else EXIT_OK
 
 
 def build_parser() -> argparse.ArgumentParser:

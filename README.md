@@ -25,13 +25,15 @@ uv run sharepoint-connector status
 
 Run the `auth` command above and it logs you in. All `lrh-*` Microsoft 365 connectors share one login engine (`lrh-m365-auth`), so one login covers them all. Microsoft may ask for more than one approval, because the connectors use different Microsoft clients.
 
-`status` shows the signed-in account and its cached profiles without touching the network. To switch accounts, run `auth --sign-out`, then `auth` again. Which profile serves which tool is in [architecture](docs/architecture.md#authentication-and-account-binding).
+`status` shows the signed-in account and its cached profiles without touching the network. To switch accounts, run `auth --sign-out`, then `auth` again. Which profile serves which tool is in [architecture](docs/architecture.md#2-authentication-and-account-binding).
 
 > Credentials are entered only on Microsoft's sign-in page. Tokens stay in the shared encrypted cache
-> (`~/.lrh-m365-auth`, or `M365_AUTH_HOME`). If encryption is unavailable, sign-in fails closed.
+> (`%USERPROFILE%/.lrh-m365-auth` on Windows, the XDG data folder elsewhere, or `M365_AUTH_HOME`).
+> If encryption is unavailable, sign-in fails closed.
 
-Downloaded files are stored under `%LOCALAPPDATA%\lrh-sharepoint-connector\downloads\<account-fingerprint>\`
-on Windows. Set `SHAREPOINT_CONNECTOR_HOME` to override the data root.
+Downloaded files are stored under `%USERPROFILE%/.lrh-sharepoint-connector/downloads/<account-fingerprint>/`
+on Windows, and removed after seven days the next time a file is downloaded. Set
+`SHAREPOINT_CONNECTOR_HOME` to override the data root.
 
 ### Configure a local MCP client
 
@@ -75,52 +77,16 @@ See the [Codex MCP guide](https://developers.openai.com/codex/mcp/).
 
 Replace the sample path with your clone’s absolute path. In Windows JSON paths, escape backslashes (for example, `C:\\Users\\you\\lrh-sharepoint-connector`). This example requires Copilot Chat’s Agent mode with local MCP support; see [VS Code’s MCP guide](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
 
-> **Client compatibility:** These examples require a locally running agentic client that can launch a stdio MCP server. Hosted ChatGPT Web, Claude web chat, Copilot web chat, and similar services cannot start this local process. This project does not provide a remote MCP endpoint; hosted clients require one to be deployed separately. Claude Desktop installs local servers as `.mcpb` extensions, which this repository does not package; see [Claude Desktop local MCP setup](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). ChatGPT can reach this server through OpenAI's Secure MCP Tunnel, below.
-
-### ChatGPT web through Secure MCP Tunnel
-
-ChatGPT cannot launch a local stdio server directly. OpenAI's Secure MCP Tunnel can connect a
-supported ChatGPT custom MCP app to this local server without making the server publicly reachable.
-This is an optional OpenAI Platform setup, separate from the local Codex/Claude Code commands above.
-
-You need a tunnel associated with the target ChatGPT workspace and Platform organization, its
-`tunnel_id`, a runtime API key for `tunnel-client`, and permission to use custom MCP apps and tunnels.
-Availability depends on the ChatGPT plan and workspace settings; check the current
-[ChatGPT MCP app availability](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt)
-and [Secure MCP Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).
-
-Install `tunnel-client` using the download provided in Platform tunnel settings. In PowerShell, set
-the runtime key and create a stdio profile, replacing the tunnel ID and repository path:
-
-```powershell
-$env:CONTROL_PLANE_API_KEY = "<runtime-api-key>"
-tunnel-client init --sample sample_mcp_stdio_local --profile sharepoint --tunnel-id "<tunnel-id>" --mcp-command 'uv run --directory "C:\Users\you\dev\lrh-sharepoint-connector" sharepoint-connector mcp'
-tunnel-client doctor --profile sharepoint --explain
-tunnel-client run --profile sharepoint
-```
-
-Keep `tunnel-client run` running while ChatGPT uses the app. In ChatGPT web, open Settings or
-workspace settings, create a custom MCP app, choose the tunnel connection, select this tunnel, scan
-the tools, and create the app. Developer mode, workspace authorization and Platform tunnel
-permissions may require an administrator. The tunnel client uses the connector's local shared auth
-cache; do not copy that cache or its secrets into the MCP app configuration.
-
-ChatGPT can receive search results and metadata from this server. `download_file` saves the selected
-file on the computer running the tunnel client and returns its local path; hosted ChatGPT cannot
-read that path. Reading downloaded file contents from ChatGPT would need an additional content-returning
-or file-transfer capability, which this connector does not currently provide.
-
-For local-client troubleshooting, restart or reload that client after changing its MCP configuration
-and confirm the `search_files`, `get_file_metadata` and `download_file` tools appear in its MCP tool
-list. The OpenAI tunnel flow instead shows the tools after the app scans a healthy, running tunnel.
+> **Client compatibility:** These examples require a locally running agentic client that can launch a stdio MCP server. Hosted chat apps cannot start this local process, and this project provides no remote MCP endpoint. ChatGPT can still reach it through OpenAI's [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), where your plan and workspace allow custom MCP apps; files the server saves stay on the computer running the tunnel.
 
 ## MCP tools
 
-The MCP server exposes the tools below; authentication and status are CLI commands, not MCP tools. Each one's inputs, results and caveats are in [architecture](docs/architecture.md#mcp-tools).
+The MCP server exposes the tools below. Sign-in itself (`auth`) is a CLI command; `auth_status` reports offline whether it is needed. Each one's inputs, results and caveats are in [architecture](docs/architecture.md#6-mcp-tools).
 
 | MCP tool | Service module | Behavior |
 |---|---|---|
-| `search_files` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Search accessible OneDrive and SharePoint files through Microsoft Search, one page at a time |
+| `auth_status` | shared auth provider | Offline: the signed-in account, each profile's cached credential and token expiry, and the sign-in command |
+| `search_files` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Search accessible OneDrive and SharePoint files through Microsoft Search, one page at a time; pass `next_cursor` alone for the next page |
 | `get_file_metadata` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Read metadata for one selected result |
 | `download_file` | [`service/files.py`](src/sharepoint_connector/service/files.py) | Download one selected file locally (50 MiB by default, 100 MiB at most) |
 
@@ -151,6 +117,11 @@ uv run ruff format --check .
 uv run pyright
 uv run pytest
 ```
+
+`lrh-m365-auth` follows its `main` branch, and `uv.lock` records the exact commit. Run
+`uv lock --upgrade-package lrh-m365-auth` to move to its latest commit.
+
+Logs: each `mcp` process writes a daily-rotated file under `<data directory>/logs/`, kept for seven days. Each tool call logs its name, duration and outcome; `SHAREPOINT_CONNECTOR_LOG_LEVEL` sets the level ([architecture](docs/architecture.md#5-logging)).
 
 Project references: [documentation index](docs/README.md) · [requirements](docs/requirements.md) · [architecture](docs/architecture.md) · [Graph API research](docs/api-research.md) · [roadmap](docs/roadmap.md).
 
