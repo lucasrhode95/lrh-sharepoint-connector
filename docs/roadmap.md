@@ -7,7 +7,7 @@ evidence is in the [research record](api-research.md). Delete an item once it is
 Work is split by what it needs: **implementation** is code still to write; **live verification** checks
 something on a real tenant before it is relied on, and becomes implementation only if a check fails.
 
-Snapshot **2026-10-27**.
+Snapshot **2026-11-10**.
 
 ## Implementation
 
@@ -15,6 +15,18 @@ The read-only connector in the [requirements](requirements.md) is built. The ite
 tenant-agnostic: the connector discovers a library's structure at runtime and never interprets a column by
 its name. Each item adds its capability to [requirements §3](requirements.md#3-read-only-capabilities) in the
 same change.
+
+### Cut what Python 3.14 makes unnecessary
+
+The project requires Python 3.14 since 2026-11-10. Review the code and remove what that leaves
+unneeded:
+
+- **Future imports:** `from __future__ import annotations` is in 24 files; 3.14 evaluates
+  annotations lazily.
+- **Old workarounds:** fallbacks or guards for standard-library behavior older Pythons had, for
+  example `HTMLParser` raising on malformed markup.
+- **Ruff:** set `target-version = "py314"` and apply its formatting (for example `except A, B:` without parentheses).
+- **Reference:** the Teams connector did this in [lrh-teams-connector#51](https://github.com/lucasrhode95/lrh-teams-connector/pull/51).
 
 ### Custom library columns in metadata
 
