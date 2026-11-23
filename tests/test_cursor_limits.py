@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from sharepoint_connector import config
 from sharepoint_connector.service.files import Files
 from tests.fakes import FakeRepository

@@ -7,7 +7,7 @@ evidence is in the [research record](api-research.md). Delete an item once it is
 Work is split by what it needs: **implementation** is code still to write; **live verification** checks
 something on a real tenant before it is relied on, and becomes implementation only if a check fails.
 
-Snapshot **2026-10-27**.
+Snapshot **2026-11-23**.
 
 ## Implementation
 

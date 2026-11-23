@@ -1,7 +1,5 @@
 """MCP tools: thin, read-only wrappers over the file service."""
 
-from __future__ import annotations
-
 import functools
 import logging
 import time

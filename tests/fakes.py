@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 from m365_auth import AccessToken

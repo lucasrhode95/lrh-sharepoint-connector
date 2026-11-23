@@ -4,8 +4,6 @@ This module owns Graph route spelling, request bodies and wire response mapping.
 resource-level drive/item IDs; the distinct Microsoft Search hitId is never used as a driveItem ID.
 """
 
-from __future__ import annotations
-
 import asyncio
 import ipaddress
 import json
@@ -423,7 +421,7 @@ def _retry_delay(response: httpx.Response) -> float:
         try:
             date = parsedate_to_datetime(value).timestamp()
             return min(30.0, max(0.0, date - time.time()))
-        except (TypeError, ValueError, OverflowError):
+        except TypeError, ValueError, OverflowError:
             return 1.0
 
 

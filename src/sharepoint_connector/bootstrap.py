@@ -1,7 +1,5 @@
 """Lazy composition root: shared auth, Graph adapter and file service."""
 
-from __future__ import annotations
-
 import asyncio
 from dataclasses import dataclass
 
