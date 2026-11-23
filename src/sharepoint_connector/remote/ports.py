@@ -1,7 +1,5 @@
 """Ports consumed by domain services."""
 
-from __future__ import annotations
-
 from typing import BinaryIO, Protocol
 
 from sharepoint_connector.domain.models import FileMetadata, RemoteSearchPage

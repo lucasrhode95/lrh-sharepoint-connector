@@ -1,7 +1,5 @@
 """File search, metadata hydration and user-selected bounded downloads."""
 
-from __future__ import annotations
-
 import base64
 import json
 import os
@@ -148,7 +146,7 @@ def _decode_cursor(cursor: str) -> tuple[str, str | None, int, int]:
     try:
         data = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
         query, scope, page_size, offset = data["q"], data["s"], data["n"], data["o"]
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         raise _bad_cursor() from None
     if not isinstance(query, str) or not (scope is None or isinstance(scope, str)):
         raise _bad_cursor()

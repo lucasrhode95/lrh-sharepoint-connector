@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import pytest
 
 from sharepoint_connector.service.files import _safe_filename  # pyright: ignore[reportPrivateUsage]

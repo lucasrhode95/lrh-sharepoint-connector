@@ -1,7 +1,5 @@
 """CLI for shared authentication, status and the stdio MCP server."""
 
-from __future__ import annotations
-
 import argparse
 import sys
 from collections.abc import Sequence

@@ -38,7 +38,7 @@ asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 110
-target-version = "py312"
+target-version = "py314"
 extend-exclude = ["research"]
 
 [tool.ruff.lint]
